@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Ad</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f5f5f5; }
+        .card-form { max-width: 700px; margin: 0 auto; }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" th:href="@{/}">Screens Manager</a>
+        <div class="navbar-nav">
+            <a class="nav-link" th:href="@{/screens}">Screens</a>
+            <a class="nav-link active" th:href="@{/ads}">Ads</a>
+            <a class="nav-link" th:href="@{/schedules}">Schedules</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <h2 class="mb-4" th:text="${ad.id} == null ? 'New Ad' : 'Edit Ad'"></h2>
+
+    <div class="card card-form shadow-sm">
+        <div class="card-body">
+            <form th:action="${ad.id} == null ? @{/ads} : @{'/ads/' + ${ad.id}}"
+                  th:object="${ad}" method="post">
+
+                <div class="mb-3">
+                    <label class="form-label">Company ID</label>
+                    <input type="number" min="1" th:field="*{companyId}" class="form-control">
+                    <div class="form-text">Optional, used for reporting per company.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Title</label>
+                    <input type="text" th:field="*{title}" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Media URL</label>
+                    <input type="url" th:field="*{url}" class="form-control" required>
+                    <div class="form-text">
+                        Example: https://example.com/media/video1.mp4 or https://example.com/media/image1.jpg
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">MIME type</label>
+                    <input type="text" th:field="*{mimeType}" class="form-control" required>
+                    <div class="form-text">
+                        Example: <code>video/mp4</code>, <code>image/jpeg</code>.
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Media duration (seconds)</label>
+                    <input type="number" min="1" th:field="*{mediaDuration}" class="form-control" required>
+                    <div class="form-text">
+                        How long this ad should stay on screen for each play.
+                    </div>
+                </div>
+
+                <div class="alert alert-info" th:if="${ad.id != null}">
+                    <div><strong>Stats:</strong></div>
+                    <div>Total runs: <span th:text="*{totalRuns}">0</span></div>
+                    <div>Total seconds played: <span th:text="*{totalSecondsPlayed}">0</span></div>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                    <a th:href="@{/ads}" class="btn btn-secondary me-2">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

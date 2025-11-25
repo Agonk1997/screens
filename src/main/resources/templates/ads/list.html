@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Ads</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f5f5f5; }
+        .table thead th { background-color: #0f172a; color: #fff; }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" th:href="@{/}">Screens Manager</a>
+        <div class="navbar-nav">
+            <a class="nav-link" th:href="@{/screens}">Screens</a>
+            <a class="nav-link active" th:href="@{/ads}">Ads</a>
+            <a class="nav-link" th:href="@{/schedules}">Schedules</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">Ads</h2>
+        <!-- you can add "New Ad" button here later if you want -->
+    </div>
+
+    <div class="table-responsive bg-white shadow-sm rounded">
+        <table class="table table-striped table-bordered align-middle mb-0">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Filename</th>
+                <th>Mimetype</th>
+                <th>Duration (s)</th>
+                <th>Active</th>
+                <th class="text-end">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="ad : ${ads}">
+                <td th:text="${ad.id}">1</td>
+                <td th:text="${ad.name}">Ad name</td>
+                <td th:text="${ad.filename}">file.mp4</td>
+                <td th:text="${ad.mimetype}">video/mp4</td>
+                <td th:text="${ad.duration}">10</td>
+                <td>
+                    <span class="badge bg-success" th:if="${ad.active == true}">Active</span>
+                    <span class="badge bg-secondary" th:if="${ad.active != true}">Inactive</span>
+                </td>
+                <td class="text-end">
+                    <a th:href="@{|/ads/${ad.id}/stats|}"
+                       class="btn btn-sm btn-outline-primary">
+                        View stats
+                    </a>
+                    <!-- you can add Edit/Delete buttons here later -->
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(ads)}">
+                <td colspan="7" class="text-center text-muted">
+                    No ads found.
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
