@@ -28,9 +28,6 @@ public class AdStatsService {
         this.scheduleRepository = scheduleRepository;
     }
 
-    // =====================================================================================
-    //                                LIFETIME STATS
-    // =====================================================================================
     public AdGlobalStats computeTotalStats(Integer adId) {
         // All schedules for this ad across all time
         List<Schedule> allSchedulesForAd = scheduleRepository.findByMediaAsset_Id(adId);
@@ -89,9 +86,6 @@ public class AdStatsService {
         return new AdGlobalStats(adId, adName, totalPlays, totalSeconds, finalStats);
     }
 
-    // =====================================================================================
-    //                                RANGE STATS (Monthly / Custom)
-    // =====================================================================================
     public List<AdPerScreenStats> computeStatsForRange(Integer adId, LocalDate start, LocalDate end) {
         if (start == null || end == null || end.isBefore(start)) {
             return List.of();
@@ -128,22 +122,7 @@ public class AdStatsService {
         return new ArrayList<>(perScreenMap.values());
     }
 
-    // =====================================================================================
-    //                            CORE CAPACITY CALCULATOR
-    // =====================================================================================
-
-    /**
-     * Calculates the total number of plays of THIS AD on a given screen within a specific date range.
-     *
-     * For each schedule row of this ad on this screen:
-     *  - intersect its [fromdate, todate] with [rangeStart, rangeEnd]
-     *  - for each day in that intersection:
-     *      * get the full playlist for that screen & day
-     *      * loopTime = sum(schedule.duration for all ads) + 2 * 10s static ads
-     *      * windowSeconds = duration of this schedule's time window (fromtime–totime)
-     *      * loopsInThisWindow = windowSeconds / loopTime
-     *  - sum loops over all days and all schedule rows
-     */
+   
     private long calculatePlaysPerScreen(List<Schedule> adSchedulesForScreen,
                                          LocalDate rangeStart,
                                          LocalDate rangeEnd) {
@@ -198,14 +177,7 @@ public class AdStatsService {
         return totalPlays;
     }
 
-    // =====================================================================================
-    //                            LOOP / WINDOW HELPERS
-    // =====================================================================================
-
-    /**
-     * Calculates the total time for one loop of the playlist:
-     * loopTime = sum(all client ad durations from schedule.duration) + SYSTEM_AD_COUNT * SYSTEM_AD_DURATION
-     */
+  
     private long getPlaylistTotalLoopTimeSeconds(List<Schedule> playlistSchedules) {
         if (playlistSchedules == null || playlistSchedules.isEmpty()) {
             return 0L;
@@ -243,14 +215,7 @@ public class AdStatsService {
         return windowSeconds / loopTimeSeconds; // pure integer division, no “force 1 play” here
     }
 
-    // =====================================================================================
-    //                            UTILITY HELPERS
-    // =====================================================================================
-
-    /**
-     * Gets the ad duration (seconds) from schedule rows.
-     * Assumes all schedules for this ad use the same duration.
-     */
+   
     private double getAdDurationFromSchedules(List<Schedule> schedules) {
         return schedules.stream()
                 .map(Schedule::getDuration)
