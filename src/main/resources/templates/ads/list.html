@@ -2,73 +2,296 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Ads</title>
+    <title>Ads Manager</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
-        body { background-color: #f5f5f5; }
-        .table thead th { background-color: #0f172a; color: #fff; }
+        /* --- Colors (Based on your request) --- */
+        :root {
+            --primary-dark: #0f172a; /* Navbar/Header Background */
+            --background-light: #f5f5f5;
+            --table-header-text: #fff;
+            --table-row-hover: rgba(15, 23, 42, 0.05); /* Light hover effect */
+        }
+        
+        /* --- General Layout & Body --- */
+        body { background-color: var(--background-light); }
+        /* Removed max-width: 1200px constraint to use full screen width */
+        .container-fluid { padding-left: 1.5rem; padding-right: 1.5rem; }
+        
+        /* --- Navbar --- */
+        .navbar { border-bottom: 3px solid #6366f1; }
+
+        /* --- Table Styling & Scrolling --- */
+        .table-container {
+            max-height: 75vh;
+            overflow-y: auto;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .table {
+            --bs-table-bg: #fff;
+        }
+        
+        .table thead th {
+            background-color: var(--primary-dark);
+            color: var(--table-header-text);
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .table-striped > tbody > tr:hover {
+            background-color: var(--table-row-hover);
+        }
+
+        /* Adjusted padding for a clean, professional look */
+        .table > :not(caption) > * > * {
+            padding: 0.75rem 1rem;
+        }
+        
+        /* --- Preview/Thumbnail Consistency --- */
+        .thumb-area {
+            height: 60px;
+            width: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            border-radius: 4px;
+        }
+
+        .thumb-img {
+            max-height: 60px;
+            max-width: 100px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: zoom-in;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .thumb-img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        /* Style for the "No Preview" placeholder */
+        .thumb-placeholder {
+            background-color: #f8fafc;
+            color: #94a3b8;
+            border: 1px solid #e2e8f0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            font-size: 1.25rem;
+            cursor: default;
+        }
+
+        /* Video Badge styling for better click feedback */
+        .clickable-badge {
+            cursor: pointer;
+            transition: background-color 0.2s;
+            padding: 0.5rem 0.75rem;
+        }
+        
+        /* Action Button Group */
+        .action-group .btn {
+            min-width: 110px; /* Slightly wider button for 'View Stats' */
+        }
+        
+        /* Modal Style */
+        #previewModal .modal-content { border: none; }
+        #previewContainer { padding: 0; max-height: 90vh; }
+        #previewContainer img, #previewContainer video {
+            display: block;
+            margin: auto;
+            max-width: 100%;
+            max-height: 90vh;
+        }
+        
     </style>
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-    <div class="container-fluid">
-        <a class="navbar-brand" th:href="@{/ads}">Screens Manager</a>
+    <div class="container-fluid"> 
+        <a class="navbar-brand" th:href="@{/ads-reports}">Screens Manager</a>
         <div class="navbar-nav">
-          
-            <a class="nav-link active" th:href="@{/ads}">Ads</a>
-           
+            <a class="nav-link active" th:href="@{/ads-reports}">Ads</a>
         </div>
     </div>
 </nav>
 
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="mb-0">Ads</h2>
-        <!-- you can add "New Ad" button here later if you want -->
+<div class="container-fluid"> 
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0 text-dark">Advertising Content List</h2>
+       
     </div>
 
-    <div class="table-responsive bg-white shadow-sm rounded">
-        <table class="table table-striped table-bordered align-middle mb-0">
+    <div class="table-container bg-white shadow-lg rounded">
+        <table class="table table-striped align-middle mb-0">
             <thead>
             <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Filename</th>
-                <th>Mimetype</th>
-                <th>Duration (s)</th>
-                <th>Active</th>
-                <th class="text-end">Actions</th>
+                <th style="width: 10%">Preview</th>
+                <th style="width: 35%">Name</th> <th style="width: 10%">Type</th>
+                <th style="width: 10%">Duration</th>
+                <th style="width: 10%">Status</th>
+                <th class="text-end" style="width: 15%">Actions</th> <th style="width: 10%">#ID</th>
             </tr>
             </thead>
+
             <tbody>
             <tr th:each="ad : ${ads}">
-                <td th:text="${ad.id}">1</td>
-                <td th:text="${ad.name}">Ad name</td>
-                <td th:text="${ad.filename}">file.mp4</td>
-                <td th:text="${ad.mimetype}">video/mp4</td>
-                <td th:text="${ad.duration}">10</td>
+                
+                <td class="text-center">
+                    <div class="thumb-area">
+                        <th:block th:if="${ad.url != null and !#strings.isEmpty(ad.url)}">
+                            <img th:if="${ad.mimetype != null and #strings.startsWith(ad.mimetype, 'image')}"
+                                 th:src="${ad.url}"
+                                 th:attr="data-preview-url=${ad.url}"
+                                 class="thumb-img js-preview-image"
+                                 alt="Image Ad">
+
+                            <span th:if="${ad.mimetype != null and #strings.startsWith(ad.mimetype, 'video')}"
+                                  class="badge bg-dark clickable-badge js-preview-video"
+                                  th:attr="data-preview-url=${ad.url}">
+                                <i class="bi bi-camera-video"></i> Video
+                            </span>
+                            
+                            <span th:if="${ad.mimetype == null or (!#strings.startsWith(ad.mimetype, 'image') and !#strings.startsWith(ad.mimetype, 'video'))}"
+                                  class="badge bg-secondary">
+                                <i class="bi bi-file-earmark"></i> File
+                            </span>
+                        </th:block>
+
+                        <div th:unless="${ad.url != null and !#strings.isEmpty(ad.url)}"
+                             class="thumb-placeholder">
+                            <i class="bi bi-eye-slash-fill"></i>
+                        </div>
+                    </div>
+                </td>
+
+                <td th:text="${ad.name}" class="fw-bold text-truncate" title="Ad name">Ad name</td>
+
                 <td>
-                    <span class="badge bg-success" th:if="${ad.active == true}">Active</span>
-                    <span class="badge bg-secondary" th:if="${ad.active != true}">Inactive</span>
+                    <span th:text="${
+                        ad.mimetype != null and #strings.startsWith(ad.mimetype, 'image') ? 'Photo' :
+                        (ad.mimetype != null and #strings.startsWith(ad.mimetype, 'video') ? 'Video' : 'Other')
+                    }">
+                        Photo
+                    </span>
                 </td>
-                <td class="text-end">
-                    <a th:href="@{|/ads/${ad.id}/stats|}"
+
+                <td th:text="${#numbers.formatDecimal(ad.duration, 0, 'POINT', 0, 'NONE')} + 's'" class="font-monospace">
+                    10s
+                </td>
+
+                <td>
+                    <span class="badge bg-success" th:if="${ad.active == true}">
+                        <i class="bi bi-check-circle-fill"></i> Active
+                    </span>
+                    <span class="badge bg-secondary" th:if="${ad.active != true}">
+                        <i class="bi bi-slash-circle"></i> Inactive
+                    </span>
+                </td>
+
+                <td class="text-end action-group">
+                    <a th:href="@{|/ads-reports/${ad.id}/stats|}"
                        class="btn btn-sm btn-outline-primary">
-                        View stats
+                        <i class="bi bi-bar-chart-fill me-1"></i> View Stats
                     </a>
-                    <!-- you can add Edit/Delete buttons here later -->
                 </td>
+                
+                <td th:text="${ad.id}" class="text-muted small">1</td>
             </tr>
-            <tr th:if="${#lists.isEmpty(ads)}">
-                <td colspan="7" class="text-center text-muted">
-                    No ads found.
-                </td>
-            </tr>
+
+          
             </tbody>
         </table>
     </div>
 </div>
 
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content bg-dark shadow-lg">
+            <div class="modal-body text-center" id="previewContainer"></div>
+            <div class="text-end p-2 border-top border-secondary">
+                <button class="btn btn-light" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg me-1"></i> Close Preview
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    function openPreviewImage(url) {
+        const container = document.getElementById("previewContainer");
+        container.innerHTML = `<img src="${url}" style="max-width:100%; max-height:90vh;" class="rounded">`;
+        const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+        modal.show();
+    }
+
+    // Function to handle video preview and stop playback on modal close
+    function openPreviewVideo(url) {
+        const container = document.getElementById("previewContainer");
+        container.innerHTML = `
+            <video controls autoplay style="max-width:100%; max-height:90vh;" class="rounded">
+                <source src="${url}">
+                Your browser does not support the video tag.
+            </video>
+        `;
+        const modalElement = document.getElementById('previewModal');
+        const modal = new bootstrap.Modal(modalElement);
+        
+        // Remove previous listener to prevent duplicate calls
+        modalElement.removeEventListener('hidden.bs.modal', stopVideoPlayback);
+
+        // Add a new listener to stop the video when the modal is closed
+        modalElement.addEventListener('hidden.bs.modal', stopVideoPlayback);
+        
+        modal.show();
+    }
+
+    function stopVideoPlayback() {
+        const container = document.getElementById("previewContainer");
+        const videoElement = container.querySelector('video');
+        if (videoElement) {
+            videoElement.pause();
+            videoElement.currentTime = 0;
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // Image thumbnails
+        document.querySelectorAll(".js-preview-image").forEach(function (img) {
+            img.addEventListener("click", function () {
+                const url = img.getAttribute("data-preview-url");
+                if (url) {
+                    openPreviewImage(url);
+                }
+            });
+        });
+
+        // Video badges
+        document.querySelectorAll(".js-preview-video").forEach(function (badge) {
+            badge.addEventListener("click", function () {
+                const url = badge.getAttribute("data-preview-url");
+                if (url) {
+                    openPreviewVideo(url);
+                }
+            });
+        });
+    });
+</script>
+
 </body>
 </html>
