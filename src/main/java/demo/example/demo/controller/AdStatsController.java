@@ -16,7 +16,7 @@ import java.time.*;
 import java.util.List;
 
 @Controller
-@RequestMapping("/ads")
+@RequestMapping("/ads-reports") // UPDATED: Changed base path from "/ads" to "/ads-reports"
 public class AdStatsController {
 
     private final MediaAssetRepository mediaAssetRepository;
@@ -28,7 +28,7 @@ public class AdStatsController {
         this.adStatsService = adStatsService;
     }
 
-    @GetMapping("/{id}/stats")
+    @GetMapping("/{id}/stats") // Access via /ads-reports/{id}/stats
     public String adStats(@PathVariable Integer id,
                           @RequestParam(required = false)
                           @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
@@ -78,14 +78,15 @@ public class AdStatsController {
         return "ads/stats";
     }
     
-    @GetMapping
+    @GetMapping // Access via /ads-reports
     public String listAds(Model model) {
-       List<MediaAsset> ads = mediaAssetRepository.findAll();
-       model.addAttribute("ads", ads);
-       return "ads/list";
+        List<MediaAsset> ads = mediaAssetRepository.findAll();
+        model.addAttribute("ads", ads);
+        // Template expected path: /src/main/resources/templates/ads/list.html
+        return "ads/list";
     }
 
-    @GetMapping("/{id}/stats/debug")
+    @GetMapping("/{id}/stats/debug") // Access via /ads-reports/{id}/stats/debug
     @ResponseBody
     public String debug(@PathVariable Integer id) {
         AdGlobalStats global = adStatsService.computeTotalStats(id);

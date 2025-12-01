@@ -15,10 +15,14 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
+// NEW IMPORTS REQUIRED FOR NUMBER FORMATTING
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 
 // Custom Utility Object (Helper for the Dialect)
 class CustomUtilityObject {
     
+    // EXISTING METHOD: Formats duration (e.g., 1h 5m 10s)
     public String formatDuration(Long totalSeconds) {
         if (totalSeconds == null || totalSeconds <= 0) {
             return "0s";
@@ -41,16 +45,42 @@ class CustomUtilityObject {
         return sb.toString().trim();
     }
     
+    // EXISTING METHOD: Formats month (e.g., November 2025)
     public String formatMonth(LocalDate date) {
         if (date == null) {
             return "";
         }
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault());
+        // Using Locale.US to ensure a consistent output pattern
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.US); 
         return date.format(formatter);
+    }
+    
+    // NEW METHOD: Formats number with thousands separator (e.g., 10000 -> 10,000)
+    public String formatNumber(Object number) {
+        if (number == null) {
+            return "0";
+        }
+        
+        // Ensure the object is treated as a long, casting if necessary
+        long numValue;
+        if (number instanceof Number) {
+            numValue = ((Number) number).longValue();
+        } else {
+            try {
+                numValue = Long.parseLong(number.toString());
+            } catch (NumberFormatException e) {
+                return "N/A";
+            }
+        }
+
+        // Use a DecimalFormat with US locale to reliably use comma (,) as the separator
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
+        DecimalFormat formatter = new DecimalFormat("#,##0", symbols);
+        return formatter.format(numValue);
     }
 }
 
-// Custom Dialect Definition
+// Custom Dialect Definition (Unchanged but complete)
 class CustomUtilityDialect extends AbstractProcessorDialect implements IExpressionObjectDialect {
 
     public CustomUtilityDialect() {
@@ -74,6 +104,7 @@ class CustomUtilityDialect extends AbstractProcessorDialect implements IExpressi
             @Override
             public Object buildObject(final IExpressionContext context, final String expressionObjectName) {
                 if ("util".equals(expressionObjectName)) {
+                    // This is where the utility object is instantiated
                     return new CustomUtilityObject();
                 }
                 return null;
@@ -84,6 +115,7 @@ class CustomUtilityDialect extends AbstractProcessorDialect implements IExpressi
                 return true;
             }
             
+            // This method is generally for compatibility, often omitted in modern dialects
             public boolean is20Compatible() {
                 return true;
             }
@@ -92,7 +124,7 @@ class CustomUtilityDialect extends AbstractProcessorDialect implements IExpressi
 }
 
 
-// Spring Configuration
+// Spring Configuration (Unchanged but complete)
 @Configuration
 public class ThymeleafConfig {
 
