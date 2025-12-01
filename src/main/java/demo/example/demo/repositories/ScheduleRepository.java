@@ -13,8 +13,7 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Integer> {
     // All schedules for a given screen
     List<Schedule> findByScreen_Id(Integer screenId);
 
-    // 🔹 FIX for N+1 and retrieval: Use JPQL to retrieve all schedules for an Ad ID, 
-    // EAGERLY FETCHING the Screen to avoid N+1 queries later.
+    // JPQL to retrieve all schedules for an Ad ID, EAGERLY FETCHING the Screen
     @Query("SELECT s FROM Schedule s JOIN FETCH s.screen WHERE s.mediaAsset.id = :mediaAssetId")
     List<Schedule> findByMediaAsset_Id(@Param("mediaAssetId") Integer mediaAssetId);
 
@@ -25,7 +24,7 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Integer> {
               AND s.todate >= :start
             """)
     List<Schedule> findOverlapping(@Param("start") LocalDate start,
-                                   @Param("end") LocalDate end);
+                                 @Param("end") LocalDate end);
 
     // Same thing, but only for one screen
     @Query("""
@@ -38,8 +37,7 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Integer> {
                                             @Param("start") LocalDate start,
                                             @Param("end") LocalDate end);
     
-    // 🔹 FIX for N+1 and retrieval: Use JPQL to filter by MediaAsset ID and date range, 
-    // EAGERLY FETCHING the Screen.
+    // JPQL to filter by MediaAsset ID and date range, EAGERLY FETCHING the Screen.
     @Query("""
             SELECT s FROM Schedule s JOIN FETCH s.screen
             WHERE s.mediaAsset.id = :adId
@@ -49,4 +47,19 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Integer> {
     List<Schedule> findByMediaAssetIdAndDateRange(@Param("adId") Integer adId,
                                                   @Param("start") LocalDate start,
                                                   @Param("end") LocalDate end);
+                                                  
+    // 🚀 CRITICAL QUERY: Find ALL schedules active on a specific screen and date.
+    // Eagerly fetch MediaAsset and Screen for capacity calculation.
+    @Query("""
+            SELECT s FROM Schedule s 
+            JOIN FETCH s.mediaAsset 
+            JOIN FETCH s.screen 
+            WHERE s.screen.id = :screenId
+              AND s.fromdate <= :day
+              AND s.todate >= :day
+            """)
+    List<Schedule> findAllActiveSchedulesByScreenIdAndDate(
+        @Param("screenId") Integer screenId, 
+        @Param("day") LocalDate day
+    );
 }
