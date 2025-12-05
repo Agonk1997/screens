@@ -53,4 +53,7 @@ public class AdPerScreenStats {
         this.plays += plays;
         this.totalSeconds += seconds;
     }
+     public double getAvgSecondsPerPlay() {
+        return plays > 0 ? (double) totalSeconds / plays : 0.0;
+    }
 }

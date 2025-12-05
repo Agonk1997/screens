@@ -22,6 +22,7 @@ public class MediaAsset {
 
     private Integer ordernr;
 
+    @Transient
     private Boolean active;
 
     private Double duration; // REAL VALUE
