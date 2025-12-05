@@ -2,111 +2,148 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Ads Manager</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Screens Ads Manager</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
-        /* --- Colors (Based on your request) --- */
         :root {
-            --primary-dark: #0f172a; /* Navbar/Header Background */
-            --background-light: #f5f5f5;
+            --primary-color: #4f46e5; /* Indigo */
+            --primary-dark: #1e293b; /* Dark Slate */
+            --background-light: #f8fafc; /* Lighter background */
+            --card-bg: #fff;
+            --table-header-bg: var(--primary-dark);
             --table-header-text: #fff;
-            --table-row-hover: rgba(15, 23, 42, 0.05); /* Light hover effect */
+            --table-row-hover: rgba(79, 70, 229, 0.05); /* Light Indigo hover */
         }
-        
-        /* --- General Layout & Body --- */
-        body { background-color: var(--background-light); }
-        /* Removed max-width: 1200px constraint to use full screen width */
-        .container-fluid { padding-left: 1.5rem; padding-right: 1.5rem; }
-        
-        /* --- Navbar --- */
-        .navbar { border-bottom: 3px solid #6366f1; }
 
-        /* --- Table Styling & Scrolling --- */
-        .table-container {
-            max-height: 75vh;
-            overflow-y: auto;
-            border-radius: 0.5rem;
+        body { background-color: var(--background-light); }
+        .container-fluid { padding: 1rem 2rem; }
+
+        .navbar { border-bottom: 3px solid var(--primary-color); }
+
+        /* Card for Search Bar */
+        .search-card {
+            background-color: var(--card-bg);
             border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
         }
-        
-        .table {
-            --bs-table-bg: #fff;
+
+        /* Table container styling */
+        .table-container {
+            max-height: 70vh; /* Slightly reduced height for better top/bottom visibility */
+            overflow-y: auto;
+            border-radius: 0.75rem;
+            border: 1px solid #e2e8f0;
+            background-color: var(--card-bg);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
         }
-        
+
         .table thead th {
-            background-color: var(--primary-dark);
+            background-color: var(--table-header-bg);
             color: var(--table-header-text);
             position: sticky;
             top: 0;
-            z-index: 2;
+            z-index: 5; /* Increased z-index */
             font-weight: 600;
             white-space: nowrap;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            font-size: 0.85rem;
         }
 
         .table-striped > tbody > tr:hover {
             background-color: var(--table-row-hover);
+            transition: background-color 0.2s;
         }
 
-        /* Adjusted padding for a clean, professional look */
         .table > :not(caption) > * > * {
-            padding: 0.75rem 1rem;
+            padding: 1rem 1.25rem; /* Increased padding */
         }
-        
-        /* --- Preview/Thumbnail Consistency --- */
+
+        /* Thumbnail styling */
         .thumb-area {
-            height: 60px;
-            width: 100px;
+            height: 70px; /* Slightly larger thumbnail */
+            width: 120px;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto;
-            border-radius: 4px;
+            border-radius: 0.375rem;
         }
 
         .thumb-img {
-            max-height: 60px;
-            max-width: 100px;
+            max-height: 70px;
+            max-width: 120px;
             object-fit: cover;
-            border-radius: 4px;
+            border-radius: 0.375rem;
             cursor: zoom-in;
             transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
         }
 
         .thumb-img:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transform: scale(1.03);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
         }
 
-        /* Style for the "No Preview" placeholder */
         .thumb-placeholder {
-            background-color: #f8fafc;
+            background-color: #f1f5f9;
             color: #94a3b8;
-            border: 1px solid #e2e8f0;
+            border: 1px dashed #cbd5e1;
             width: 100%;
             height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 4px;
-            font-size: 1.25rem;
+            border-radius: 0.375rem;
+            font-size: 1.5rem;
             cursor: default;
         }
 
-        /* Video Badge styling for better click feedback */
+        /* Video/File badge styling */
         .clickable-badge {
             cursor: pointer;
             transition: background-color 0.2s;
-            padding: 0.5rem 0.75rem;
+            padding: 0.4rem 0.6rem;
+            font-size: 0.85rem;
+            font-weight: 500;
         }
-        
-        /* Action Button Group */
-        .action-group .btn {
-            min-width: 110px; /* Slightly wider button for 'View Stats' */
+
+        /* Action buttons group */
+        .action-group .btn { min-width: 120px; font-size: 0.9rem; }
+        .action-group .btn-outline-primary {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
         }
-        
-        /* Modal Style */
+
+        /* Section Titles */
+        .section-title {
+            margin-top: 3rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e2e8f0;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .section-title i { font-size: 1.35rem; }
+
+        /* Text/Data alignment and style */
+        td { font-size: 0.95rem; }
+        .text-truncate { max-width: 250px; overflow: hidden; text-overflow: ellipsis; }
+        .font-monospace { font-weight: 500; }
+
+        /* ID Column style */
+        .ad-id {
+            font-size: 0.85rem;
+            color: #64748b !important;
+        }
+
+        /* Modal styling */
         #previewModal .modal-content { border: none; }
         #previewContainer { padding: 0; max-height: 90vh; }
         #previewContainer img, #previewContainer video {
@@ -114,41 +151,64 @@
             margin: auto;
             max-width: 100%;
             max-height: 90vh;
+            object-fit: contain;
         }
-        
     </style>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-    <div class="container-fluid"> 
-        <a class="navbar-brand" th:href="@{/ads-reports}">Screens Manager</a>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" th:href="@{/ads-reports}">📺 Screens Manager</a>
         <div class="navbar-nav">
-            <a class="nav-link active" th:href="@{/ads-reports}">Ads</a>
+            <a class="nav-link active fw-medium" th:href="@{/ads-reports}">Ads Content</a>
         </div>
     </div>
 </nav>
 
-<div class="container-fluid"> 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0 text-dark">Advertising Content List</h2>
-       
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4 pt-3">
+        <h2 class="mb-0 text-dark fw-bold">Advertising Content List</h2>
+        </div>
+
+    <div class="search-card mb-5">
+        <div class="row g-4 align-items-end">
+            <div class="col-md-3">
+                <label for="searchId" class="form-label mb-1 fw-medium">Search by Ad ID</label>
+                <input type="number" min="0" class="form-control" id="searchId" placeholder="e.g. 12">
+            </div>
+            <div class="col-md-5">
+                <label for="searchName" class="form-label mb-1 fw-medium">Search by Name</label>
+                <input type="text" class="form-control" id="searchName" placeholder="Type part of the ad name...">
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-outline-secondary w-100 py-2" id="clearSearch">
+                    <i class="bi bi-x-circle me-1"></i> Clear Filter
+                </button>
+            </div>
+        </div>
     </div>
 
-    <div class="table-container bg-white shadow-lg rounded">
+    <h3 class="section-title text-success">
+        <i class="bi bi-check-circle-fill me-2"></i> Active Ads
+    </h3>
+
+    <div class="table-container mb-5" th:if="${activeAds != null and !activeAds.isEmpty()}">
         <table class="table table-striped align-middle mb-0">
             <thead>
             <tr>
                 <th style="width: 10%">Preview</th>
-                <th style="width: 35%">Name</th> <th style="width: 10%">Type</th>
-                <th style="width: 10%">Duration</th>
+                <th style="width: 30%">Name</th>
+                <th style="width: 10%">Type</th>
+                <th style="width: 10%">Avg. Duration</th>
                 <th style="width: 10%">Status</th>
-                <th class="text-end" style="width: 15%">Actions</th> <th style="width: 10%">#ID</th>
+                <th class="text-end" style="width: 20%">Actions</th>
+                <th style="width: 10%">#ID</th>
             </tr>
             </thead>
-
             <tbody>
-            <tr th:each="ad : ${ads}">
-                
+            <tr th:each="ad : ${activeAds}"
+                th:attr="data-ad-id=${ad.id},data-ad-name=${ad.name}">
                 <td class="text-center">
                     <div class="thumb-area">
                         <th:block th:if="${ad.url != null and !#strings.isEmpty(ad.url)}">
@@ -163,9 +223,9 @@
                                   th:attr="data-preview-url=${ad.url}">
                                 <i class="bi bi-camera-video"></i> Video
                             </span>
-                            
+
                             <span th:if="${ad.mimetype == null or (!#strings.startsWith(ad.mimetype, 'image') and !#strings.startsWith(ad.mimetype, 'video'))}"
-                                  class="badge bg-secondary">
+                                  class="badge bg-secondary clickable-badge">
                                 <i class="bi bi-file-earmark"></i> File
                             </span>
                         </th:block>
@@ -177,27 +237,28 @@
                     </div>
                 </td>
 
-                <td th:text="${ad.name}" class="fw-bold text-truncate" title="Ad name">Ad name</td>
+                <td th:text="${ad.name}" class="fw-bold text-truncate"></td>
 
                 <td>
                     <span th:text="${
                         ad.mimetype != null and #strings.startsWith(ad.mimetype, 'image') ? 'Photo' :
                         (ad.mimetype != null and #strings.startsWith(ad.mimetype, 'video') ? 'Video' : 'Other')
-                    }">
-                        Photo
-                    </span>
+                    }" class="fw-medium"></span>
                 </td>
 
-                <td th:text="${#numbers.formatDecimal(ad.duration, 0, 'POINT', 0, 'NONE')} + 's'" class="font-monospace">
-                    10s
+                <td class="font-monospace text-center"
+                    th:with="stats=${statsMap[ad.id]}"
+                    th:text="${
+                        stats != null and stats.totalPlays > 0
+                            ? #numbers.formatDecimal(stats.totalSeconds / stats.totalPlays, 1, 1) + 's'
+                            : (ad.duration != null ? #numbers.formatDecimal(ad.duration, 0, 0) + 's' : '0s')
+                    }">
+                    0s
                 </td>
 
                 <td>
-                    <span class="badge bg-success" th:if="${ad.active == true}">
-                        <i class="bi bi-check-circle-fill"></i> Active
-                    </span>
-                    <span class="badge bg-secondary" th:if="${ad.active != true}">
-                        <i class="bi bi-slash-circle"></i> Inactive
+                    <span class="badge rounded-pill bg-success-subtle text-success fw-bold p-2">
+                        <i class="bi bi-check-circle-fill me-1"></i> Active
                     </span>
                 </td>
 
@@ -207,13 +268,287 @@
                         <i class="bi bi-bar-chart-fill me-1"></i> View Stats
                     </a>
                 </td>
-                
-                <td th:text="${ad.id}" class="text-muted small">1</td>
-            </tr>
 
-          
+                <td th:text="${ad.id}" class="text-end ad-id"></td>
+            </tr>
             </tbody>
         </table>
+    </div>
+    <div class="alert alert-info border-0" role="alert" th:if="${activeAds == null or activeAds.isEmpty()}">
+        <i class="bi bi-info-circle me-2"></i> No active ads are currently running.
+    </div>
+
+    <hr/>
+
+    <h3 class="section-title text-primary">
+        <i class="bi bi-clock-fill me-2"></i> Scheduled Ads
+    </h3>
+
+    <div class="table-container mb-5" th:if="${scheduledAds != null and !scheduledAds.isEmpty()}">
+        <table class="table table-striped align-middle mb-0">
+            <thead>
+            <tr>
+                <th style="width: 10%">Preview</th>
+                <th style="width: 30%">Name</th>
+                <th style="width: 10%">Type</th>
+                <th style="width: 10%">Avg. Duration</th>
+                <th style="width: 10%">Status</th>
+                <th class="text-end" style="width: 20%">Actions</th>
+                <th style="width: 10%">#ID</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="ad : ${scheduledAds}"
+                th:attr="data-ad-id=${ad.id},data-ad-name=${ad.name}">
+                <td class="text-center">
+                    <div class="thumb-area">
+                        <th:block th:if="${ad.url != null and !#strings.isEmpty(ad.url)}">
+                            <img th:if="${ad.mimetype != null and #strings.startsWith(ad.mimetype, 'image')}"
+                                 th:src="${ad.url}"
+                                 th:attr="data-preview-url=${ad.url}"
+                                 class="thumb-img js-preview-image"
+                                 alt="Image Ad">
+
+                            <span th:if="${ad.mimetype != null and #strings.startsWith(ad.mimetype, 'video')}"
+                                  class="badge bg-dark clickable-badge js-preview-video"
+                                  th:attr="data-preview-url=${ad.url}">
+                                <i class="bi bi-camera-video"></i> Video
+                            </span>
+
+                            <span th:if="${ad.mimetype == null or (!#strings.startsWith(ad.mimetype, 'image') and !#strings.startsWith(ad.mimetype, 'video'))}"
+                                  class="badge bg-secondary clickable-badge">
+                                <i class="bi bi-file-earmark"></i> File
+                            </span>
+                        </th:block>
+
+                        <div th:unless="${ad.url != null and !#strings.isEmpty(ad.url)}"
+                             class="thumb-placeholder">
+                            <i class="bi bi-eye-slash-fill"></i>
+                        </div>
+                    </div>
+                </td>
+
+                <td th:text="${ad.name}" class="fw-bold text-truncate"></td>
+
+                <td>
+                    <span th:text="${
+                        ad.mimetype != null and #strings.startsWith(ad.mimetype, 'image') ? 'Photo' :
+                        (ad.mimetype != null and #strings.startsWith(ad.mimetype, 'video') ? 'Video' : 'Other')
+                    }" class="fw-medium"></span>
+                </td>
+
+                <td class="font-monospace text-center"
+                    th:with="stats=${statsMap[ad.id]}"
+                    th:text="${
+                        stats != null and stats.totalPlays > 0
+                            ? #numbers.formatDecimal(stats.totalSeconds / stats.totalPlays, 1, 1) + 's'
+                            : (ad.duration != null ? #numbers.formatDecimal(ad.duration, 0, 0) + 's' : '0s')
+                    }">
+                    0s
+                </td>
+
+                <td>
+                    <span class="badge rounded-pill bg-primary-subtle text-primary fw-bold p-2">
+                        <i class="bi bi-clock-fill me-1"></i> Scheduled
+                    </span>
+                </td>
+
+                <td class="text-end action-group">
+                    <a th:href="@{|/ads-reports/${ad.id}/stats|}"
+                       class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-bar-chart-fill me-1"></i> View Stats
+                    </a>
+                </td>
+
+                <td th:text="${ad.id}" class="text-end ad-id"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="alert alert-info border-0" role="alert" th:if="${scheduledAds == null or scheduledAds.isEmpty()}">
+        <i class="bi bi-info-circle me-2"></i> No ads are currently scheduled.
+    </div>
+
+    <hr/>
+
+    <h3 class="section-title text-danger">
+        <i class="bi bi-x-circle-fill me-2"></i> Expired Ads
+    </h3>
+
+    <div class="table-container mb-5" th:if="${expiredAds != null and !expiredAds.isEmpty()}">
+        <table class="table table-striped align-middle mb-0">
+            <thead>
+            <tr>
+                <th style="width: 10%">Preview</th>
+                <th style="width: 30%">Name</th>
+                <th style="width: 10%">Type</th>
+                <th style="width: 10%">Avg. Duration</th>
+                <th style="width: 10%">Status</th>
+                <th class="text-end" style="width: 20%">Actions</th>
+                <th style="width: 10%">#ID</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="ad : ${expiredAds}"
+                th:attr="data-ad-id=${ad.id},data-ad-name=${ad.name}">
+                <td class="text-center">
+                    <div class="thumb-area">
+                        <th:block th:if="${ad.url != null and !#strings.isEmpty(ad.url)}">
+                            <img th:if="${ad.mimetype != null and #strings.startsWith(ad.mimetype, 'image')}"
+                                 th:src="${ad.url}"
+                                 th:attr="data-preview-url=${ad.url}"
+                                 class="thumb-img js-preview-image"
+                                 alt="Image Ad">
+
+                            <span th:if="${ad.mimetype != null and #strings.startsWith(ad.mimetype, 'video')}"
+                                  class="badge bg-dark clickable-badge js-preview-video"
+                                  th:attr="data-preview-url=${ad.url}">
+                                <i class="bi bi-camera-video"></i> Video
+                            </span>
+
+                            <span th:if="${ad.mimetype == null or (!#strings.startsWith(ad.mimetype, 'image') and !#strings.startsWith(ad.mimetype, 'video'))}"
+                                  class="badge bg-secondary clickable-badge">
+                                <i class="bi bi-file-earmark"></i> File
+                            </span>
+                        </th:block>
+
+                        <div th:unless="${ad.url != null and !#strings.isEmpty(ad.url)}"
+                             class="thumb-placeholder">
+                            <i class="bi bi-eye-slash-fill"></i>
+                        </div>
+                    </div>
+                </td>
+
+                <td th:text="${ad.name}" class="fw-bold text-truncate"></td>
+
+                <td>
+                    <span th:text="${
+                        ad.mimetype != null and #strings.startsWith(ad.mimetype, 'image') ? 'Photo' :
+                        (ad.mimetype != null and #strings.startsWith(ad.mimetype, 'video') ? 'Video' : 'Other')
+                    }" class="fw-medium"></span>
+                </td>
+
+                <td class="font-monospace text-center"
+                    th:with="stats=${statsMap[ad.id]}"
+                    th:text="${
+                        stats != null and stats.totalPlays > 0
+                            ? #numbers.formatDecimal(stats.totalSeconds / stats.totalPlays, 1, 1) + 's'
+                            : (ad.duration != null ? #numbers.formatDecimal(ad.duration, 0, 0) + 's' : '0s')
+                    }">
+                    0s
+                </td>
+
+                <td>
+                    <span class="badge rounded-pill bg-danger-subtle text-danger fw-bold p-2">
+                        <i class="bi bi-x-circle-fill me-1"></i> Expired
+                    </span>
+                </td>
+
+                <td class="text-end action-group">
+                    <a th:href="@{|/ads-reports/${ad.id}/stats|}"
+                       class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-bar-chart-fill me-1"></i> View Stats
+                    </a>
+                </td>
+
+                <td th:text="${ad.id}" class="text-end ad-id"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="alert alert-info border-0" role="alert" th:if="${expiredAds == null or expiredAds.isEmpty()}">
+        <i class="bi bi-info-circle me-2"></i> No ads are expired.
+    </div>
+
+    <hr/>
+
+    <h3 class="section-title text-secondary">
+        <i class="bi bi-slash-circle me-2"></i> Inactive Ads
+    </h3>
+
+    <div class="table-container mb-5" th:if="${inactiveAds != null and !inactiveAds.isEmpty()}">
+        <table class="table table-striped align-middle mb-0">
+            <thead>
+            <tr>
+                <th style="width: 10%">Preview</th>
+                <th style="width: 30%">Name</th>
+                <th style="width: 10%">Type</th>
+                <th style="width: 10%">Avg. Duration</th>
+                <th style="width: 10%">Status</th>
+                <th class="text-end" style="width: 20%">Actions</th>
+                <th style="width: 10%">#ID</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="ad : ${inactiveAds}"
+                th:attr="data-ad-id=${ad.id},data-ad-name=${ad.name}">
+                <td class="text-center">
+                    <div class="thumb-area">
+                        <th:block th:if="${ad.url != null and !#strings.isEmpty(ad.url)}">
+                            <img th:if="${ad.mimetype != null and #strings.startsWith(ad.mimetype, 'image')}"
+                                 th:src="${ad.url}"
+                                 th:attr="data-preview-url=${ad.url}"
+                                 class="thumb-img js-preview-image"
+                                 alt="Image Ad">
+
+                            <span th:if="${ad.mimetype != null and #strings.startsWith(ad.mimetype, 'video')}"
+                                  class="badge bg-dark clickable-badge js-preview-video"
+                                  th:attr="data-preview-url=${ad.url}">
+                                <i class="bi bi-camera-video"></i> Video
+                            </span>
+
+                            <span th:if="${ad.mimetype == null or (!#strings.startsWith(ad.mimetype, 'image') and !#strings.startsWith(ad.mimetype, 'video'))}"
+                                  class="badge bg-secondary clickable-badge">
+                                <i class="bi bi-file-earmark"></i> File
+                            </span>
+                        </th:block>
+
+                        <div th:unless="${ad.url != null and !#strings.isEmpty(ad.url)}"
+                             class="thumb-placeholder">
+                            <i class="bi bi-eye-slash-fill"></i>
+                        </div>
+                    </div>
+                </td>
+
+                <td th:text="${ad.name}" class="fw-bold text-truncate"></td>
+
+                <td>
+                    <span th:text="${
+                        ad.mimetype != null and #strings.startsWith(ad.mimetype, 'image') ? 'Photo' :
+                        (ad.mimetype != null and #strings.startsWith(ad.mimetype, 'video') ? 'Video' : 'Other')
+                    }" class="fw-medium"></span>
+                </td>
+
+                <td class="font-monospace text-center"
+                    th:with="stats=${statsMap[ad.id]}"
+                    th:text="${
+                        stats != null and stats.totalPlays > 0
+                            ? #numbers.formatDecimal(stats.totalSeconds / stats.totalPlays, 1, 1) + 's'
+                            : (ad.duration != null ? #numbers.formatDecimal(ad.duration, 0, 0) + 's' : '0s')
+                    }">
+                    0s
+                </td>
+
+                <td>
+                    <span class="badge rounded-pill bg-secondary-subtle text-secondary fw-bold p-2">
+                        <i class="bi bi-slash-circle me-1"></i> Inactive
+                    </span>
+                </td>
+
+                <td class="text-end action-group">
+                    <a th:href="@{|/ads-reports/${ad.id}/stats|}"
+                       class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-bar-chart-fill me-1"></i> View Stats
+                    </a>
+                </td>
+
+                <td th:text="${ad.id}" class="text-end ad-id"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="alert alert-info border-0" role="alert" th:if="${inactiveAds == null or inactiveAds.isEmpty()}">
+        <i class="bi bi-info-circle me-2"></i> No ads are inactive.
     </div>
 </div>
 
@@ -233,14 +568,13 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
+    // Preview functions (Unchanged)
     function openPreviewImage(url) {
         const container = document.getElementById("previewContainer");
         container.innerHTML = `<img src="${url}" style="max-width:100%; max-height:90vh;" class="rounded">`;
-        const modal = new bootstrap.Modal(document.getElementById('previewModal'));
-        modal.show();
+        new bootstrap.Modal(document.getElementById('previewModal')).show();
     }
 
-    // Function to handle video preview and stop playback on modal close
     function openPreviewVideo(url) {
         const container = document.getElementById("previewContainer");
         container.innerHTML = `
@@ -251,25 +585,47 @@
         `;
         const modalElement = document.getElementById('previewModal');
         const modal = new bootstrap.Modal(modalElement);
-        
-        // Remove previous listener to prevent duplicate calls
-        modalElement.removeEventListener('hidden.bs.modal', stopVideoPlayback);
 
-        // Add a new listener to stop the video when the modal is closed
-        modalElement.addEventListener('hidden.bs.modal', stopVideoPlayback);
-        
+        modalElement.addEventListener('hidden.bs.modal', () => {
+            const video = container.querySelector('video');
+            if (video) {
+                video.pause();
+                video.currentTime = 0;
+            }
+        });
+
         modal.show();
     }
 
-    function stopVideoPlayback() {
-        const container = document.getElementById("previewContainer");
-        const videoElement = container.querySelector('video');
-        if (videoElement) {
-            videoElement.pause();
-            videoElement.currentTime = 0;
-        }
+    // Search filter logic (Unchanged)
+    function applySearchFilter() {
+        const idInput = document.getElementById("searchId");
+        const nameInput = document.getElementById("searchName");
+
+        const idValue = idInput.value.trim();
+        const nameValue = nameInput.value.trim().toLowerCase();
+
+        const rows = document.querySelectorAll("tr[data-ad-id]");
+
+        rows.forEach(row => {
+            const rowId = row.getAttribute("data-ad-id") || "";
+            const rowName = (row.getAttribute("data-ad-name") || "").toLowerCase();
+
+            let visible = true;
+
+            if (idValue !== "") {
+                visible = visible && (rowId === idValue);
+            }
+
+            if (nameValue !== "") {
+                visible = visible && rowName.includes(nameValue);
+            }
+
+            row.style.display = visible ? "" : "none";
+        });
     }
 
+    // Initialization (Unchanged)
     document.addEventListener("DOMContentLoaded", function () {
         // Image thumbnails
         document.querySelectorAll(".js-preview-image").forEach(function (img) {
@@ -290,6 +646,25 @@
                 }
             });
         });
+
+        // Search logic
+        const searchId = document.getElementById("searchId");
+        const searchName = document.getElementById("searchName");
+        const clearBtn = document.getElementById("clearSearch");
+
+        if (searchId) {
+            searchId.addEventListener("input", applySearchFilter);
+        }
+        if (searchName) {
+            searchName.addEventListener("input", applySearchFilter);
+        }
+        if (clearBtn) {
+            clearBtn.addEventListener("click", function () {
+                searchId.value = "";
+                searchName.value = "";
+                applySearchFilter();
+            });
+        }
     });
 </script>
 

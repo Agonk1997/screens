@@ -4,8 +4,6 @@ import com.lowagie.text.*;
 import com.lowagie.text.pdf.*;
 import demo.example.demo.dto.AdGlobalStats;
 import demo.example.demo.dto.AdPerScreenStats;
-import demo.example.demo.entity.Schedule;
-import demo.example.demo.repositories.ScheduleRepository;
 import org.springframework.stereotype.Service;
 
 import java.awt.Color;
@@ -15,7 +13,6 @@ import java.io.InputStream;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
@@ -23,7 +20,6 @@ import java.util.Locale;
 public class AdReportPdfService {
 
     private final AdStatsService adStatsService;
-    private final ScheduleRepository scheduleRepository;
 
     private static final DateTimeFormatter DATE_FMT =
             DateTimeFormatter.ofPattern("dd.MM.yyyy");
@@ -33,29 +29,26 @@ public class AdReportPdfService {
     // Logo path inside src/main/resources
     private static final String LOGO_PATH = "/reports/company-logo.png";
 
-    public AdReportPdfService(AdStatsService adStatsService,
-                              ScheduleRepository scheduleRepository) {
+    public AdReportPdfService(AdStatsService adStatsService) {
         this.adStatsService = adStatsService;
-        this.scheduleRepository = scheduleRepository;
     }
 
     // ========================================================================
     //                       LIFETIME PDF REPORT (USED BY BUTTON)
     // ========================================================================
+    /**
+     * Lifetime report based purely on event logs:
+     * - lifetimeFrom = date of first play from eventlogs
+     * - lifetimeTo   = date of last play from eventlogs
+     * - totalPlays/seconds/perScreen also from eventlogs
+     */
     public byte[] generateLifetimeReport(Integer adId) {
         AdGlobalStats stats = adStatsService.computeTotalStats(adId);
 
-        // Lifetime start/end from schedules
-        List<Schedule> schedules = scheduleRepository.findByMediaAsset_Id(adId);
-        LocalDate activeFrom = schedules.stream()
-                .map(Schedule::getFromdate)
-                .min(Comparator.naturalOrder())
-                .orElse(null);
-
-        LocalDate activeTo = schedules.stream()
-                .map(Schedule::getTodate)
-                .max(Comparator.naturalOrder())
-                .orElse(null);
+        // Lifetime start/end now come from event-based stats (eventlogs),
+        // not from schedules.
+        LocalDate activeFrom = stats.getLifetimeFrom();
+        LocalDate activeTo = stats.getLifetimeTo();
 
         return buildPdf(
                 adId,
@@ -73,7 +66,13 @@ public class AdReportPdfService {
     // ========================================================================
     //                       OPTIONAL RANGE REPORT
     // ========================================================================
+    /**
+     * Range report:
+     * - plays/seconds/perScreen for [reportFrom, reportTo] from eventlogs
+     * - lifetime period still from the full history of eventlogs
+     */
     public byte[] generateRangeReport(Integer adId, LocalDate reportFrom, LocalDate reportTo) {
+        // Per-screen stats for the given range (event-based)
         List<AdPerScreenStats> perScreenRange =
                 adStatsService.computeStatsForRange(adId, reportFrom, reportTo);
 
@@ -85,19 +84,12 @@ public class AdReportPdfService {
                 .mapToLong(AdPerScreenStats::getTotalSeconds)
                 .sum();
 
+        // Lifetime stats (full history) from eventlogs
         AdGlobalStats lifetimeStats = adStatsService.computeTotalStats(adId);
         String adName = lifetimeStats.getAdName();
 
-        List<Schedule> schedules = scheduleRepository.findByMediaAsset_Id(adId);
-        LocalDate activeFrom = schedules.stream()
-                .map(Schedule::getFromdate)
-                .min(Comparator.naturalOrder())
-                .orElse(null);
-
-        LocalDate activeTo = schedules.stream()
-                .map(Schedule::getTodate)
-                .max(Comparator.naturalOrder())
-                .orElse(null);
+        LocalDate activeFrom = lifetimeStats.getLifetimeFrom();
+        LocalDate activeTo = lifetimeStats.getLifetimeTo();
 
         return buildPdf(
                 adId,

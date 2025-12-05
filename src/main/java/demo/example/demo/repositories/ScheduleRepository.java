@@ -13,9 +13,13 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Integer> {
     // All schedules for a given screen
     List<Schedule> findByScreen_Id(Integer screenId);
 
-    // JPQL to retrieve all schedules for an Ad ID, EAGERLY FETCHING the Screen
-    @Query("SELECT s FROM Schedule s JOIN FETCH s.screen WHERE s.mediaAsset.id = :mediaAssetId")
-    List<Schedule> findByMediaAsset_Id(@Param("mediaAssetId") Integer mediaAssetId);
+    // 🔥 All schedules for a given MediaAsset (Ad), eagerly fetching Screen
+    @Query("""
+            SELECT s FROM Schedule s
+            JOIN FETCH s.screen
+            WHERE s.mediaAsset.id = :mediaAssetId
+            """)
+    List<Schedule> findByMediaAssetId(@Param("mediaAssetId") Integer mediaAssetId);
 
     // All schedules whose [fromdate, todate] overlaps the given [start, end]
     @Query("""
@@ -24,7 +28,7 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Integer> {
               AND s.todate >= :start
             """)
     List<Schedule> findOverlapping(@Param("start") LocalDate start,
-                                 @Param("end") LocalDate end);
+                                   @Param("end") LocalDate end);
 
     // Same thing, but only for one screen
     @Query("""
@@ -36,10 +40,11 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Integer> {
     List<Schedule> findOverlappingForScreen(@Param("screenId") Integer screenId,
                                             @Param("start") LocalDate start,
                                             @Param("end") LocalDate end);
-    
-    // JPQL to filter by MediaAsset ID and date range, EAGERLY FETCHING the Screen.
+
+    // Filter by MediaAsset ID and date range, eagerly fetching Screen
     @Query("""
-            SELECT s FROM Schedule s JOIN FETCH s.screen
+            SELECT s FROM Schedule s
+            JOIN FETCH s.screen
             WHERE s.mediaAsset.id = :adId
               AND s.fromdate <= :end
               AND s.todate >= :start
@@ -47,7 +52,7 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Integer> {
     List<Schedule> findByMediaAssetIdAndDateRange(@Param("adId") Integer adId,
                                                   @Param("start") LocalDate start,
                                                   @Param("end") LocalDate end);
-                                                  
+
     // 🚀 CRITICAL QUERY: Find ALL schedules active on a specific screen and date.
     // Eagerly fetch MediaAsset and Screen for capacity calculation.
     @Query("""
@@ -59,7 +64,7 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Integer> {
               AND s.todate >= :day
             """)
     List<Schedule> findAllActiveSchedulesByScreenIdAndDate(
-        @Param("screenId") Integer screenId, 
-        @Param("day") LocalDate day
+            @Param("screenId") Integer screenId,
+            @Param("day") LocalDate day
     );
 }

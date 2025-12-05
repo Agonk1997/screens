@@ -170,7 +170,10 @@
                         <span>Ad Duration</span>
                         <i class="bi bi-stopwatch-fill kpi-icon"></i>
                     </h6>
-                    <p class="kpi-value" th:text="${ad.duration + 's'}">0s</p>
+                    <p class="kpi-value"
+               th:text="${#numbers.formatDecimal(global.avgSecondsPerPlay, 1, 1)} + 's'">
+                0.0s
+            </p>
                     <small class="text-muted">Seconds per play, defining total exposure.</small>
                 </div>
             </div>
