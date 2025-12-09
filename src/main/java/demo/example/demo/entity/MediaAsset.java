@@ -16,6 +16,9 @@ public class MediaAsset {
 
     private String mimetype;
 
+    private String companyname;
+
+
     private String filename;
 
     private String description;
@@ -53,4 +56,7 @@ public class MediaAsset {
 
     public Double getDuration() { return duration; }
     public void setDuration(Double duration) { this.duration = duration; }
+
+    public String getCompanyname() { return companyname; }
+    public void setCompanyname(String companyname) { this.companyname = companyname; }
 }

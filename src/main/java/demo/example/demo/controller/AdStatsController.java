@@ -55,7 +55,15 @@ public class AdStatsController {
         // EVENT-BASED LIFETIME
         AdGlobalStats global = adStatsService.computeTotalStats(id);
         if (global == null) {
-            global = new AdGlobalStats(id, ad.getName(), 0L, 0L, List.of(), null, null);
+            global = new AdGlobalStats(
+                    id,
+                    ad.getName(),
+                    0L,
+                    0L,
+                    List.of(),
+                    null,
+                    null
+            );
         } else {
             global.setAdName(ad.getName());
         }
@@ -83,73 +91,77 @@ public class AdStatsController {
         model.addAttribute("weekStats", weekStats);
         model.addAttribute("monthStats", monthStats);
 
+        // ✅ MAKE COMPANY NAME AVAILABLE TO STATS PAGE
+        model.addAttribute("companyName", ad.getCompanyname());
+
         return "ads/stats";
     }
 
     // ------------------------------------------------------------
     // List ads grouped by status using AdListDto
     // ------------------------------------------------------------
-@GetMapping
-public String listAds(Model model) {
+    @GetMapping
+    public String listAds(Model model) {
 
-    List<MediaAsset> mediaAssets = mediaAssetRepository.findAll();
+        List<MediaAsset> mediaAssets = mediaAssetRepository.findAll();
 
-    List<AdListDto> allAds       = new ArrayList<>();
-    List<AdListDto> activeAds    = new ArrayList<>();
-    List<AdListDto> inactiveAds  = new ArrayList<>();
-    List<AdListDto> scheduledAds = new ArrayList<>();
-    List<AdListDto> expiredAds   = new ArrayList<>();
+        List<AdListDto> allAds       = new ArrayList<>();
+        List<AdListDto> activeAds    = new ArrayList<>();
+        List<AdListDto> inactiveAds  = new ArrayList<>();
+        List<AdListDto> scheduledAds = new ArrayList<>();
+        List<AdListDto> expiredAds   = new ArrayList<>();
 
-    // for Thymeleaf duration column (statsMap[ad.id])
-    Map<Integer, AdGlobalStats> statsMap = new HashMap<>();
+        Map<Integer, AdGlobalStats> statsMap = new HashMap<>();
 
-    LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
 
-    for (MediaAsset ad : mediaAssets) {
+        for (MediaAsset ad : mediaAssets) {
 
-        Integer id = ad.getId();
+            Integer id = ad.getId();
 
-        // lifetime stats
-        AdGlobalStats stats = adStatsService.computeTotalStats(id);
-        if (stats != null) {
-            statsMap.put(id, stats);
+            // lifetime stats
+            AdGlobalStats stats = adStatsService.computeTotalStats(id);
+            if (stats != null) {
+                statsMap.put(id, stats);
+            }
+
+            AdListDto dto = new AdListDto(ad);
+
+            // COPY VALUES
+            dto.setTotalPlays(stats != null ? stats.getTotalPlays() : 0L);
+            dto.setTotalSeconds(stats != null ? stats.getTotalSeconds() : 0L);
+
+            // ✅ NEW: include companyName in DTO
+            dto.setCompanyname(ad.getCompanyname());
+
+            // status ("Active", "Scheduled", "Expired", "Inactive")
+            String status = computeAdStatus(id, now);
+            dto.setStatus(status);
+
+            allAds.add(dto);
+
+            if ("Active".equals(status)) {
+                activeAds.add(dto);
+            } else if ("Scheduled".equals(status)) {
+                scheduledAds.add(dto);
+            } else if ("Expired".equals(status)) {
+                expiredAds.add(dto);
+            } else {
+                inactiveAds.add(dto);
+            }
         }
 
-        AdListDto dto = new AdListDto(ad);
-        dto.setTotalPlays(stats != null ? stats.getTotalPlays() : 0L);
-        dto.setTotalSeconds(stats != null ? stats.getTotalSeconds() : 0L);
+        // main list used by ads/list.html
+        model.addAttribute("ads", allAds);
+        model.addAttribute("statsMap", statsMap);
 
-        // status ("Active", "Scheduled", "Expired", "Inactive")
-        String status = computeAdStatus(id, now);
-        dto.setStatus(status);
+        model.addAttribute("activeAds", activeAds);
+        model.addAttribute("scheduledAds", scheduledAds);
+        model.addAttribute("expiredAds", expiredAds);
+        model.addAttribute("inactiveAds", inactiveAds);
 
-        allAds.add(dto);
-
-        if ("Active".equals(status)) {
-            activeAds.add(dto);
-        } else if ("Scheduled".equals(status)) {
-            scheduledAds.add(dto);
-        } else if ("Expired".equals(status)) {
-            expiredAds.add(dto);
-        } else {
-            inactiveAds.add(dto);
-        }
+        return "ads/list";
     }
-
-    // main list used by ads/list.html
-    model.addAttribute("ads", allAds);
-    model.addAttribute("statsMap", statsMap);
-
-    // extra grouped lists if you want to use them later in the template
-    model.addAttribute("activeAds", activeAds);
-    model.addAttribute("scheduledAds", scheduledAds);
-    model.addAttribute("expiredAds", expiredAds);
-    model.addAttribute("inactiveAds", inactiveAds);
-
-    return "ads/list";
-}
-
-
 
     // ------------------------------------------------------------
     // Debug endpoint
@@ -162,14 +174,14 @@ public String listAds(Model model) {
     }
 
     // ------------------------------------------------------------
-    // Helper: compute ad status from schedules (no entity changes)
+    // Helper: compute ad status
     // ------------------------------------------------------------
     private String computeAdStatus(Integer adId, LocalDateTime now) {
 
         List<Schedule> schedules = scheduleRepository.findByMediaAssetId(adId);
 
         if (schedules == null || schedules.isEmpty()) {
-            return "Inactive"; // No schedules at all
+            return "Inactive";
         }
 
         boolean hasFuture = false;
@@ -187,26 +199,18 @@ public String listAds(Model model) {
 
             boolean dateOk =
                     (fd == null || !d.isBefore(fd)) &&
-                    (td == null || !d.isAfter(td));
+                            (td == null || !d.isAfter(td));
 
             boolean timeOk =
                     (ft == null || !t.isBefore(ft)) &&
-                    (tt == null || !t.isAfter(tt));
+                            (tt == null || !t.isAfter(tt));
 
-            // currently active
             if (dateOk && timeOk) {
                 return "Active";
             }
 
-            // clearly future
-            if (fd != null && fd.isAfter(d)) {
-                hasFuture = true;
-            }
-
-            // clearly past
-            if (td != null && td.isBefore(d)) {
-                hasPast = true;
-            }
+            if (fd != null && fd.isAfter(d)) hasFuture = true;
+            if (td != null && td.isBefore(d)) hasPast = true;
         }
 
         if (hasFuture) return "Scheduled";

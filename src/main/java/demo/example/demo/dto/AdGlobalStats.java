@@ -13,6 +13,7 @@ public class AdGlobalStats {
 
     private LocalDate lifetimeFrom;
     private LocalDate lifetimeTo;
+    private String companyname;
 
     public AdGlobalStats() {}
 
@@ -40,6 +41,7 @@ public class AdGlobalStats {
         this(adId, adName, totalPlays, totalSeconds, perScreen);
         this.lifetimeFrom = lifetimeFrom;
         this.lifetimeTo = lifetimeTo;
+        this.companyname = companyname;
     }
 
     // Getters / setters
@@ -67,4 +69,6 @@ public class AdGlobalStats {
     public double getAvgSecondsPerPlay() {
         return totalPlays > 0 ? (double) totalSeconds / totalPlays : 0.0;
     }
+    public String getCompanyname() { return companyname; }
+    public void setCompanyname(String companyname) { this.companyname = companyname; }
 }
