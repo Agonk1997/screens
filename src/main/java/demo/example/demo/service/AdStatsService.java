@@ -4,8 +4,10 @@ import demo.example.demo.dto.AdGlobalStats;
 import demo.example.demo.dto.AdPerScreenStats;
 import demo.example.demo.dto.AdStatsDto;
 import demo.example.demo.entity.EventLog;
+import demo.example.demo.entity.MediaAsset;
 import demo.example.demo.entity.Screen;
 import demo.example.demo.repositories.EventLogRepository;
+import demo.example.demo.repositories.MediaAssetRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -18,9 +20,12 @@ import java.util.*;
 public class AdStatsService {
 
     private final EventLogRepository eventLogRepository;
+    private final MediaAssetRepository mediaAssetRepository;
 
-    public AdStatsService(EventLogRepository eventLogRepository) {
+    public AdStatsService(EventLogRepository eventLogRepository,
+                          MediaAssetRepository mediaAssetRepository) {
         this.eventLogRepository = eventLogRepository;
+        this.mediaAssetRepository = mediaAssetRepository;
     }
 
     // ============================================================
@@ -65,24 +70,31 @@ public class AdStatsService {
 
     // ============================================================
     // FULL LIFETIME EVENT-BASED REPORT
-    // adId here = mediaAsset.id
+    // adId = mediaAsset.id
     // ============================================================
 
     public AdGlobalStats computeTotalStats(Integer adId) {
 
         Long mediaAssetId = adId.longValue();
 
-        // Uses the relation mediaAsset -> id
+        // Fetch MediaAsset → for adName + companyName
+        MediaAsset asset = mediaAssetRepository.findById(adId)
+                .orElse(null);
+
+        String adName = (asset != null ? asset.getName() : null);
+        String companyName = (asset != null ? asset.getCompanyname() : null);
+
         List<EventLog> logs = eventLogRepository.findByMediaAssetId(mediaAssetId);
 
         if (logs.isEmpty()) {
-            return new AdGlobalStats(adId, null, 0, 0, List.of(), null, null);
+            AdGlobalStats empty = new AdGlobalStats(adId, adName, 0, 0, List.of(), null, null);
+            empty.setCompanyname(companyName);
+            return empty;
         }
 
         long totalPlays = logs.size();
         long totalSeconds = 0L;
 
-        // now we also store screenName
         Map<Integer, ScreenAgg> aggMap = new HashMap<>();
         LocalDate lifetimeFrom = null;
         LocalDate lifetimeTo   = null;
@@ -90,12 +102,9 @@ public class AdStatsService {
         for (EventLog log : logs) {
 
             LocalDateTime start = log.getStart();
-            if (start == null) {
-                // If for some reason start is null, skip this log
-                continue;
-            }
+            if (start == null) continue;
 
-            LocalDateTime end = log.getEnd() != null ? log.getEnd() : start;
+            LocalDateTime end = (log.getEnd() != null ? log.getEnd() : start);
 
             long duration = Duration.between(start, end).getSeconds();
             if (duration < 0) duration = 0;
@@ -109,92 +118,7 @@ public class AdStatsService {
             if (lifetimeTo   == null || e.isAfter(lifetimeTo))    lifetimeTo   = e;
 
             Screen screen = log.getScreen();
-            if (screen == null || screen.getId() == null) {
-                // No screen associated → skip aggregation for screen stats
-                continue;
-            }
-
-            Integer scrId = screen.getId();
-            String screenName = screen.getName(); // 👈 real name from DB
-
-            ScreenAgg agg = aggMap.computeIfAbsent(scrId, id -> {
-                ScreenAgg a = new ScreenAgg();
-                a.name = screenName;
-                return a;
-            });
-
-            agg.plays++;
-            agg.seconds += duration;
-        }
-
-        List<AdPerScreenStats> perScreen = new ArrayList<>();
-        for (Map.Entry<Integer, ScreenAgg> entry : aggMap.entrySet()) {
-            Integer screenId = entry.getKey();
-            ScreenAgg a = entry.getValue();
-
-            String screenName = (a.name != null && !a.name.isBlank())
-                    ? a.name
-                    : "Screen " + screenId;
-
-            perScreen.add(new AdPerScreenStats(
-                    screenId,
-                    screenName,
-                    a.plays,
-                    a.seconds
-            ));
-        }
-
-        perScreen.sort(Comparator.comparingLong(AdPerScreenStats::getTotalSeconds).reversed());
-
-        return new AdGlobalStats(
-                adId,
-                null,              // adName can be filled later in the controller
-                totalPlays,
-                totalSeconds,
-                perScreen,
-                lifetimeFrom,
-                lifetimeTo
-        );
-    }
-
-    // ============================================================
-    // RANGE REPORT (USED FOR PDF & UI FILTERS)
-    // adId here = mediaAsset.id
-    // ============================================================
-
-    public List<AdPerScreenStats> computeStatsForRange(Integer adId,
-                                                       LocalDate fromDate,
-                                                       LocalDate toDate) {
-
-        LocalDateTime from = fromDate.atStartOfDay();
-        LocalDateTime to   = toDate.plusDays(1).atStartOfDay();
-
-        Long mediaAssetId = adId.longValue();
-
-        // Filter by mediaAsset and the "start" field
-        List<EventLog> logs = eventLogRepository
-                .findByMediaAssetIdAndStartBetween(mediaAssetId, from, to);
-
-        if (logs.isEmpty()) return List.of();
-
-        Map<Integer, ScreenAgg> aggMap = new HashMap<>();
-
-        for (EventLog log : logs) {
-
-            LocalDateTime start = log.getStart();
-            if (start == null) {
-                continue;
-            }
-
-            LocalDateTime end = log.getEnd() != null ? log.getEnd() : start;
-
-            long duration = Duration.between(start, end).getSeconds();
-            if (duration < 0) duration = 0;
-
-            Screen screen = log.getScreen();
-            if (screen == null || screen.getId() == null) {
-                continue;
-            }
+            if (screen == null) continue;
 
             Integer scrId = screen.getId();
             String screenName = screen.getName();
@@ -211,16 +135,97 @@ public class AdStatsService {
 
         List<AdPerScreenStats> perScreen = new ArrayList<>();
         for (Map.Entry<Integer, ScreenAgg> entry : aggMap.entrySet()) {
-            Integer screenId = entry.getKey();
+            Integer sid = entry.getKey();
             ScreenAgg a = entry.getValue();
 
-            String screenName = (a.name != null && !a.name.isBlank())
+            String sname = (a.name != null && !a.name.isBlank())
                     ? a.name
-                    : "Screen " + screenId;
+                    : "Screen " + sid;
 
             perScreen.add(new AdPerScreenStats(
-                    screenId,
-                    screenName,
+                    sid,
+                    sname,
+                    a.plays,
+                    a.seconds
+            ));
+        }
+
+        perScreen.sort(Comparator.comparingLong(AdPerScreenStats::getTotalSeconds).reversed());
+
+        AdGlobalStats result = new AdGlobalStats(
+                adId,
+                adName,
+                totalPlays,
+                totalSeconds,
+                perScreen,
+                lifetimeFrom,
+                lifetimeTo
+        );
+
+        // Add company name
+        result.setCompanyname(companyName);
+
+        return result;
+    }
+
+    // ============================================================
+    // RANGE REPORT
+    // ============================================================
+
+    public List<AdPerScreenStats> computeStatsForRange(Integer adId,
+                                                       LocalDate fromDate,
+                                                       LocalDate toDate) {
+
+        LocalDateTime from = fromDate.atStartOfDay();
+        LocalDateTime to   = toDate.plusDays(1).atStartOfDay();
+
+        Long mediaAssetId = adId.longValue();
+
+        List<EventLog> logs = eventLogRepository
+                .findByMediaAssetIdAndStartBetween(mediaAssetId, from, to);
+
+        if (logs.isEmpty()) return List.of();
+
+        Map<Integer, ScreenAgg> aggMap = new HashMap<>();
+
+        for (EventLog log : logs) {
+
+            LocalDateTime start = log.getStart();
+            if (start == null) continue;
+
+            LocalDateTime end = (log.getEnd() != null ? log.getEnd() : start);
+
+            long duration = Duration.between(start, end).getSeconds();
+            if (duration < 0) duration = 0;
+
+            Screen screen = log.getScreen();
+            if (screen == null) continue;
+
+            Integer scrId = screen.getId();
+            String screenName = screen.getName();
+
+            ScreenAgg agg = aggMap.computeIfAbsent(scrId, id -> {
+                ScreenAgg a = new ScreenAgg();
+                a.name = screenName;
+                return a;
+            });
+
+            agg.plays++;
+            agg.seconds += duration;
+        }
+
+        List<AdPerScreenStats> perScreen = new ArrayList<>();
+        for (Map.Entry<Integer, ScreenAgg> entry : aggMap.entrySet()) {
+            Integer sid = entry.getKey();
+            ScreenAgg a = entry.getValue();
+
+            String sname = (a.name != null && !a.name.isBlank())
+                    ? a.name
+                    : "Screen " + sid;
+
+            perScreen.add(new AdPerScreenStats(
+                    sid,
+                    sname,
                     a.plays,
                     a.seconds
             ));
@@ -235,6 +240,6 @@ public class AdStatsService {
     private static class ScreenAgg {
         long plays = 0;
         long seconds = 0;
-        String name; // 👈 we store the screen name here
+        String name;
     }
 }

@@ -15,6 +15,7 @@ public class AdListDto {
     private Double duration;
     private Boolean active;
     private String status; // The new computed status (Active, Expired, Scheduled, Inactive)
+    private String companyname; // New field for company name
 
     // Fields for historical data (Total Plays and Seconds)
     private Long totalPlays;
@@ -29,6 +30,7 @@ public class AdListDto {
         this.mimetype = ad.getMimetype();
         this.duration = ad.getDuration();
         this.active = ad.getActive();
+        this.companyname = ad.getCompanyname();
         // Status and stats will be set separately in the controller
     }
 
@@ -82,5 +84,11 @@ public class AdListDto {
 
     public void setTotalSeconds(Long totalSeconds) {
         this.totalSeconds = totalSeconds;
+    }
+    public String getCompanyname() {
+        return companyname;
+    }
+    public void setCompanyname(String companyname) {
+        this.companyname = companyname;
     }
 }

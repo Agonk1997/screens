@@ -4,6 +4,8 @@ import com.lowagie.text.*;
 import com.lowagie.text.pdf.*;
 import demo.example.demo.dto.AdGlobalStats;
 import demo.example.demo.dto.AdPerScreenStats;
+import demo.example.demo.entity.MediaAsset;
+import demo.example.demo.repositories.MediaAssetRepository;
 import org.springframework.stereotype.Service;
 
 import java.awt.Color;
@@ -20,39 +22,34 @@ import java.util.Locale;
 public class AdReportPdfService {
 
     private final AdStatsService adStatsService;
+    private final MediaAssetRepository mediaAssetRepository;
 
     private static final DateTimeFormatter DATE_FMT =
             DateTimeFormatter.ofPattern("dd.MM.yyyy");
     private static final NumberFormat INT_FMT =
             NumberFormat.getIntegerInstance(new Locale("sq", "AL"));
 
-    // Logo path inside src/main/resources
     private static final String LOGO_PATH = "/reports/company-logo.png";
 
-    public AdReportPdfService(AdStatsService adStatsService) {
+    public AdReportPdfService(AdStatsService adStatsService,
+                              MediaAssetRepository mediaAssetRepository) {
         this.adStatsService = adStatsService;
+        this.mediaAssetRepository = mediaAssetRepository;
     }
 
-    // ========================================================================
-    //                       LIFETIME PDF REPORT (USED BY BUTTON)
-    // ========================================================================
-    /**
-     * Lifetime report based purely on event logs:
-     * - lifetimeFrom = date of first play from eventlogs
-     * - lifetimeTo   = date of last play from eventlogs
-     * - totalPlays/seconds/perScreen also from eventlogs
-     */
+    // ---------------------------------------------------------
+    // LIFETIME REPORT
+    // ---------------------------------------------------------
     public byte[] generateLifetimeReport(Integer adId) {
         AdGlobalStats stats = adStatsService.computeTotalStats(adId);
 
-        // Lifetime start/end now come from event-based stats (eventlogs),
-        // not from schedules.
         LocalDate activeFrom = stats.getLifetimeFrom();
-        LocalDate activeTo = stats.getLifetimeTo();
+        LocalDate activeTo   = stats.getLifetimeTo();
 
         return buildPdf(
                 adId,
                 stats.getAdName(),
+                stats.getCompanyname(),    // NEW FIELD
                 activeFrom,
                 activeTo,
                 stats.getTotalPlays(),
@@ -63,18 +60,13 @@ public class AdReportPdfService {
         );
     }
 
-    // ========================================================================
-    //                       OPTIONAL RANGE REPORT
-    // ========================================================================
-    /**
-     * Range report:
-     * - plays/seconds/perScreen for [reportFrom, reportTo] from eventlogs
-     * - lifetime period still from the full history of eventlogs
-     */
-    public byte[] generateRangeReport(Integer adId, LocalDate reportFrom, LocalDate reportTo) {
-        // Per-screen stats for the given range (event-based)
+    // ---------------------------------------------------------
+    // RANGE REPORT
+    // ---------------------------------------------------------
+    public byte[] generateRangeReport(Integer adId, LocalDate from, LocalDate to) {
+
         List<AdPerScreenStats> perScreenRange =
-                adStatsService.computeStatsForRange(adId, reportFrom, reportTo);
+                adStatsService.computeStatsForRange(adId, from, to);
 
         long totalPlaysRange = perScreenRange.stream()
                 .mapToLong(AdPerScreenStats::getPlays)
@@ -84,31 +76,28 @@ public class AdReportPdfService {
                 .mapToLong(AdPerScreenStats::getTotalSeconds)
                 .sum();
 
-        // Lifetime stats (full history) from eventlogs
         AdGlobalStats lifetimeStats = adStatsService.computeTotalStats(adId);
-        String adName = lifetimeStats.getAdName();
-
-        LocalDate activeFrom = lifetimeStats.getLifetimeFrom();
-        LocalDate activeTo = lifetimeStats.getLifetimeTo();
 
         return buildPdf(
                 adId,
-                adName,
-                activeFrom,
-                activeTo,
+                lifetimeStats.getAdName(),
+                lifetimeStats.getCompanyname(),   // NEW FIELD
+                lifetimeStats.getLifetimeFrom(),
+                lifetimeStats.getLifetimeTo(),
                 totalPlaysRange,
                 totalSecondsRange,
                 perScreenRange,
-                reportFrom,
-                reportTo
+                from,
+                to
         );
     }
 
-    // ========================================================================
-    //                  CORE PDF BUILDER (CUSTOM LAYOUT)
-    // ========================================================================
+    // ---------------------------------------------------------
+    // PDF BUILDER
+    // ---------------------------------------------------------
     private byte[] buildPdf(Integer adId,
                             String adName,
+                            String companyName,     // NEW FIELD
                             LocalDate activeFrom,
                             LocalDate activeTo,
                             long totalPlays,
@@ -121,128 +110,113 @@ public class AdReportPdfService {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             Document document = new Document(PageSize.A4, 40, 40, 40, 40);
             PdfWriter writer = PdfWriter.getInstance(document, baos);
+
             document.open();
 
-            // ------------ FONTS ------------
+            // FONTS
             Font titleFont = new Font(Font.HELVETICA, 16, Font.BOLD);
-            Font subtitleFont = new Font(Font.HELVETICA, 11, Font.NORMAL);
+            Font subtitleFont = new Font(Font.HELVETICA, 12, Font.NORMAL);
             Font labelFont = new Font(Font.HELVETICA, 11, Font.BOLD);
             Font valueFont = new Font(Font.HELVETICA, 11, Font.NORMAL);
-            Font tableHeaderFont = new Font(Font.HELVETICA, 10, Font.BOLD, new Color(255, 255, 255));
-            Font tableBodyFont = new Font(Font.HELVETICA, 9, Font.NORMAL);
+            Font headerFont = new Font(Font.HELVETICA, 10, Font.BOLD, new Color(255,255,255));
+            Font cellFont = new Font(Font.HELVETICA, 9);
 
-            // ------------ HEADER (LOGO + TITLE) ------------
-            PdfPTable headerTable = new PdfPTable(2);
-            headerTable.setWidthPercentage(100f);
-            headerTable.setWidths(new float[]{1.5f, 3.5f});
+            // --------------------------------------------------
+            // HEADER (LOGO + TITLE)
+            // --------------------------------------------------
+            PdfPTable header = new PdfPTable(2);
+            header.setWidthPercentage(100);
+            header.setWidths(new float[]{1.5f, 3.5f});
 
-            // Logo cell
             PdfPCell logoCell = new PdfPCell();
             logoCell.setBorder(Rectangle.NO_BORDER);
+
             Image logo = tryLoadLogo();
             if (logo != null) {
                 logo.scaleToFit(80, 40);
                 logoCell.addElement(logo);
             }
-            headerTable.addCell(logoCell);
+            header.addCell(logoCell);
 
-            // Title cell
-            PdfPCell titleCell = new PdfPCell();
-            titleCell.setBorder(Rectangle.NO_BORDER);
+            PdfPCell textCell = new PdfPCell();
+            textCell.setBorder(Rectangle.NO_BORDER);
 
-            Paragraph title = new Paragraph("Ad Performance Report", titleFont);
-            title.setSpacingAfter(4f);
-            titleCell.addElement(title);
+            textCell.addElement(new Paragraph("Ad Performance Report", titleFont));
+            textCell.addElement(new Paragraph(adName, subtitleFont));
+            if (companyName != null && !companyName.isBlank()) {
+                textCell.addElement(new Paragraph("Company: " + companyName, subtitleFont));
+            }
 
-            String campaignName = adName != null ? adName : "(Unknown ad)";
-            Paragraph sub = new Paragraph(campaignName, subtitleFont);
-            titleCell.addElement(sub);
+            header.addCell(textCell);
+            header.setSpacingAfter(20);
+            document.add(header);
 
-            headerTable.addCell(titleCell);
-            headerTable.setSpacingAfter(20f);
-            document.add(headerTable);
+            // --------------------------------------------------
+            // SUMMARY TABLE
+            // --------------------------------------------------
+            PdfPTable summary = new PdfPTable(2);
+            summary.setWidthPercentage(100);
+            summary.setWidths(new float[]{1.2f, 4f});
 
-            // ------------ SUMMARY BLOCK ------------
-            PdfPTable summaryTable = new PdfPTable(2);
-            summaryTable.setWidthPercentage(100f);
-            summaryTable.setSpacingAfter(18f);
-            summaryTable.setWidths(new float[]{1.2f, 3.8f});
-
-            addLabelValueRow(summaryTable, "Ad ID", String.valueOf(adId), labelFont, valueFont);
-            addLabelValueRow(summaryTable, "Ad name", campaignName, labelFont, valueFont);
+            addSummaryRow(summary, "Ad ID", adId.toString(), labelFont, valueFont);
+            addSummaryRow(summary, "Ad name", adName, labelFont, valueFont);
+            addSummaryRow(summary, "Company", (companyName != null ? companyName : "-"), labelFont, valueFont);
 
             if (activeFrom != null && activeTo != null) {
-                addLabelValueRow(summaryTable,
-                        "Lifetime",
-                        DATE_FMT.format(activeFrom) + "  -  " + DATE_FMT.format(activeTo),
+                addSummaryRow(summary, "Lifetime", DATE_FMT.format(activeFrom) + " - " + DATE_FMT.format(activeTo),
                         labelFont, valueFont);
             } else {
-                addLabelValueRow(summaryTable,
-                        "Lifetime",
-                        "-",
-                        labelFont, valueFont);
+                addSummaryRow(summary, "Lifetime", "-", labelFont, valueFont);
             }
 
             if (reportFrom != null && reportTo != null) {
-                addLabelValueRow(summaryTable,
-                        "Report range",
-                        DATE_FMT.format(reportFrom) + "  -  " + DATE_FMT.format(reportTo),
+                addSummaryRow(summary, "Report range",
+                        DATE_FMT.format(reportFrom) + " - " + DATE_FMT.format(reportTo),
                         labelFont, valueFont);
             }
 
-            addLabelValueRow(summaryTable,
-                    "Total plays",
-                    INT_FMT.format(totalPlays),
-                    labelFont, valueFont);
+            addSummaryRow(summary, "Total plays", INT_FMT.format(totalPlays), labelFont, valueFont);
+            addSummaryRow(summary, "Total seconds", INT_FMT.format(totalSeconds), labelFont, valueFont);
 
-            addLabelValueRow(summaryTable,
-                    "Total seconds",
-                    INT_FMT.format(totalSeconds),
-                    labelFont, valueFont);
+            summary.setSpacingAfter(15);
+            document.add(summary);
 
-            document.add(summaryTable);
-
-            // ------------ PER-SCREEN TABLE ------------
+            // --------------------------------------------------
+            // PER-SCREEN TABLE
+            // --------------------------------------------------
             if (perScreen != null && !perScreen.isEmpty()) {
 
-                PdfPTable table = new PdfPTable(5); // #, Screen, Plays, Seconds, Seconds/Play
-                table.setWidthPercentage(100f);
-                table.setSpacingBefore(5f);
-                table.setWidths(new float[]{0.6f, 3f, 1.4f, 1.6f, 1.6f});
+                PdfPTable table = new PdfPTable(5);
+                table.setWidthPercentage(100);
+                table.setWidths(new float[]{0.7f, 3f, 1.3f, 1.3f, 1.3f});
 
-                // Header row
-                addHeaderCell(table, "#", tableHeaderFont);
-                addHeaderCell(table, "Screen", tableHeaderFont);
-                addHeaderCell(table, "Plays", tableHeaderFont);
-                addHeaderCell(table, "Seconds", tableHeaderFont);
-                addHeaderCell(table, "Sec / play", tableHeaderFont);
+                addHeader(table, "#", headerFont);
+                addHeader(table, "Screen", headerFont);
+                addHeader(table, "Plays", headerFont);
+                addHeader(table, "Seconds", headerFont);
+                addHeader(table, "Sec/play", headerFont);
 
-                int index = 1;
+                int i = 1;
                 for (AdPerScreenStats row : perScreen) {
-                    String rawName = row.getScreenName() != null ? row.getScreenName() : "(screen)";
-                    String cleanedName = rawName.replace("++", "").trim();
+
+                    String screenName = row.getScreenName() != null
+                            ? row.getScreenName().replace("++", "").trim()
+                            : "(unknown)";
 
                     long plays = row.getPlays();
-                    long seconds = row.getTotalSeconds();
+                    long secs = row.getTotalSeconds();
+                    String sp = (plays > 0) ? String.valueOf(secs / plays) : "-";
 
-                    long secPerPlay = 0;
-                    if (plays > 0 && seconds > 0) {
-                        secPerPlay = Math.round((double) seconds / (double) plays);
-                    }
-
-                    addBodyCell(table, String.valueOf(index), tableBodyFont);
-                    addBodyCell(table, cleanedName, tableBodyFont);
-                    addBodyCell(table, INT_FMT.format(plays), tableBodyFont);
-                    addBodyCell(table, INT_FMT.format(seconds), tableBodyFont);
-                    addBodyCell(table, secPerPlay > 0 ? INT_FMT.format(secPerPlay) : "-", tableBodyFont);
-
-                    index++;
+                    addCell(table, String.valueOf(i++), cellFont);
+                    addCell(table, screenName, cellFont);
+                    addCell(table, INT_FMT.format(plays), cellFont);
+                    addCell(table, INT_FMT.format(secs), cellFont);
+                    addCell(table, sp, cellFont);
                 }
 
                 document.add(table);
             } else {
-                Paragraph p = new Paragraph("This ad has no recorded plays on any screen.", valueFont);
-                document.add(p);
+                document.add(new Paragraph("No plays recorded.", valueFont));
             }
 
             document.close();
@@ -250,54 +224,44 @@ public class AdReportPdfService {
             return baos.toByteArray();
 
         } catch (Exception e) {
-            throw new RuntimeException("Failed to generate PDF report", e);
+            throw new RuntimeException("PDF generation failed", e);
         }
     }
 
-    // ========================================================================
-    //                         HELPERS
-    // ========================================================================
+    // ---------------------------------------------------------
+    // HELPERS
+    // ---------------------------------------------------------
     private Image tryLoadLogo() {
         try (InputStream in = getClass().getResourceAsStream(LOGO_PATH)) {
-            if (in == null) {
-                return null;
-            }
-            byte[] data = in.readAllBytes();
-            return Image.getInstance(data);
-        } catch (IOException | BadElementException e) {
+            if (in == null) return null;
+            return Image.getInstance(in.readAllBytes());
+        } catch (Exception e) {
             return null;
         }
     }
 
-    private void addLabelValueRow(PdfPTable table,
-                                  String label,
-                                  String value,
-                                  Font labelFont,
-                                  Font valueFont) {
+    private void addSummaryRow(PdfPTable table, String label, String value, Font labelFont, Font valueFont) {
+        PdfPCell l = new PdfPCell(new Phrase(label + ":", labelFont));
+        l.setBorder(Rectangle.NO_BORDER);
 
-        PdfPCell labelCell = new PdfPCell(new Phrase(label + ":", labelFont));
-        labelCell.setBorder(Rectangle.NO_BORDER);
-        labelCell.setPadding(2f);
+        PdfPCell v = new PdfPCell(new Phrase(value != null ? value : "-", valueFont));
+        v.setBorder(Rectangle.NO_BORDER);
 
-        PdfPCell valueCell = new PdfPCell(new Phrase(value != null ? value : "-", valueFont));
-        valueCell.setBorder(Rectangle.NO_BORDER);
-        valueCell.setPadding(2f);
-
-        table.addCell(labelCell);
-        table.addCell(valueCell);
+        table.addCell(l);
+        table.addCell(v);
     }
 
-    private void addHeaderCell(PdfPTable table, String text, Font font) {
+    private void addHeader(PdfPTable table, String text, Font font) {
         PdfPCell cell = new PdfPCell(new Phrase(text, font));
         cell.setHorizontalAlignment(Element.ALIGN_CENTER);
-        cell.setBackgroundColor(new Color(23, 42, 15)); // Dark green-ish header like your web UI
-        cell.setPadding(6f);
+        cell.setBackgroundColor(new Color(23, 42, 15));
+        cell.setPadding(5);
         table.addCell(cell);
     }
 
-    private void addBodyCell(PdfPTable table, String text, Font font) {
-        PdfPCell cell = new PdfPCell(new Phrase(text != null ? text : "-", font));
-        cell.setPadding(5f);
+    private void addCell(PdfPTable table, String text, Font font) {
+        PdfPCell cell = new PdfPCell(new Phrase(text, font));
+        cell.setPadding(5);
         table.addCell(cell);
     }
 }

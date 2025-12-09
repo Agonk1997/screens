@@ -33,7 +33,7 @@
 
         /* Table container styling */
         .table-container {
-            max-height: 70vh; /* Slightly reduced height for better top/bottom visibility */
+            max-height: 70vh;
             overflow-y: auto;
             border-radius: 0.75rem;
             border: 1px solid #e2e8f0;
@@ -46,7 +46,7 @@
             color: var(--table-header-text);
             position: sticky;
             top: 0;
-            z-index: 5; /* Increased z-index */
+            z-index: 5;
             font-weight: 600;
             white-space: nowrap;
             letter-spacing: 0.05em;
@@ -60,12 +60,12 @@
         }
 
         .table > :not(caption) > * > * {
-            padding: 1rem 1.25rem; /* Increased padding */
+            padding: 1rem 1.25rem;
         }
 
         /* Thumbnail styling */
         .thumb-area {
-            height: 70px; /* Slightly larger thumbnail */
+            height: 70px;
             width: 120px;
             display: flex;
             align-items: center;
@@ -169,8 +169,9 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4 pt-3">
         <h2 class="mb-0 text-dark fw-bold">Advertising Content List</h2>
-        </div>
+    </div>
 
+    <!-- SEARCH BAR -->
     <div class="search-card mb-5">
         <div class="row g-4 align-items-end">
             <div class="col-md-3">
@@ -189,6 +190,7 @@
         </div>
     </div>
 
+    <!-- ================= ACTIVE ADS ================= -->
     <h3 class="section-title text-success">
         <i class="bi bi-check-circle-fill me-2"></i> Active Ads
     </h3>
@@ -198,17 +200,19 @@
             <thead>
             <tr>
                 <th style="width: 10%">Preview</th>
-                <th style="width: 30%">Name</th>
+                <th style="width: 20%">Name</th>
+                <th style="width: 15%">Company</th>
                 <th style="width: 10%">Type</th>
                 <th style="width: 10%">Avg. Duration</th>
                 <th style="width: 10%">Status</th>
-                <th class="text-end" style="width: 20%">Actions</th>
+                <th class="text-end" style="width: 15%">Actions</th>
                 <th style="width: 10%">#ID</th>
             </tr>
             </thead>
             <tbody>
             <tr th:each="ad : ${activeAds}"
                 th:attr="data-ad-id=${ad.id},data-ad-name=${ad.name}">
+                <!-- Preview -->
                 <td class="text-center">
                     <div class="thumb-area">
                         <th:block th:if="${ad.url != null and !#strings.isEmpty(ad.url)}">
@@ -237,8 +241,14 @@
                     </div>
                 </td>
 
+                <!-- Name -->
                 <td th:text="${ad.name}" class="fw-bold text-truncate"></td>
 
+                <!-- Company -->
+                <td th:text="${ad.companyname != null and !#strings.isEmpty(ad.companyname) ? ad.companyname : '—'}"
+                    class="text-truncate"></td>
+
+                <!-- Type -->
                 <td>
                     <span th:text="${
                         ad.mimetype != null and #strings.startsWith(ad.mimetype, 'image') ? 'Photo' :
@@ -246,6 +256,7 @@
                     }" class="fw-medium"></span>
                 </td>
 
+                <!-- Avg Duration -->
                 <td class="font-monospace text-center"
                     th:with="stats=${statsMap[ad.id]}"
                     th:text="${
@@ -256,12 +267,14 @@
                     0s
                 </td>
 
+                <!-- Status -->
                 <td>
                     <span class="badge rounded-pill bg-success-subtle text-success fw-bold p-2">
                         <i class="bi bi-check-circle-fill me-1"></i> Active
                     </span>
                 </td>
 
+                <!-- Actions -->
                 <td class="text-end action-group">
                     <a th:href="@{|/ads-reports/${ad.id}/stats|}"
                        class="btn btn-sm btn-outline-primary">
@@ -269,17 +282,20 @@
                     </a>
                 </td>
 
+                <!-- ID -->
                 <td th:text="${ad.id}" class="text-end ad-id"></td>
             </tr>
             </tbody>
         </table>
     </div>
-    <div class="alert alert-info border-0" role="alert" th:if="${activeAds == null or activeAds.isEmpty()}">
+    <div class="alert alert-info border-0" role="alert"
+         th:if="${activeAds == null or activeAds.isEmpty()}">
         <i class="bi bi-info-circle me-2"></i> No active ads are currently running.
     </div>
 
     <hr/>
 
+    <!-- ================= SCHEDULED ADS ================= -->
     <h3 class="section-title text-primary">
         <i class="bi bi-clock-fill me-2"></i> Scheduled Ads
     </h3>
@@ -289,17 +305,19 @@
             <thead>
             <tr>
                 <th style="width: 10%">Preview</th>
-                <th style="width: 30%">Name</th>
+                <th style="width: 20%">Name</th>
+                <th style="width: 15%">Company</th>
                 <th style="width: 10%">Type</th>
                 <th style="width: 10%">Avg. Duration</th>
                 <th style="width: 10%">Status</th>
-                <th class="text-end" style="width: 20%">Actions</th>
+                <th class="text-end" style="width: 15%">Actions</th>
                 <th style="width: 10%">#ID</th>
             </tr>
             </thead>
             <tbody>
             <tr th:each="ad : ${scheduledAds}"
                 th:attr="data-ad-id=${ad.id},data-ad-name=${ad.name}">
+                <!-- Preview -->
                 <td class="text-center">
                     <div class="thumb-area">
                         <th:block th:if="${ad.url != null and !#strings.isEmpty(ad.url)}">
@@ -328,8 +346,14 @@
                     </div>
                 </td>
 
+                <!-- Name -->
                 <td th:text="${ad.name}" class="fw-bold text-truncate"></td>
 
+                <!-- Company -->
+                <td th:text="${ad.companyname != null and !#strings.isEmpty(ad.companyname) ? ad.companyname : '—'}"
+                    class="text-truncate"></td>
+
+                <!-- Type -->
                 <td>
                     <span th:text="${
                         ad.mimetype != null and #strings.startsWith(ad.mimetype, 'image') ? 'Photo' :
@@ -337,6 +361,7 @@
                     }" class="fw-medium"></span>
                 </td>
 
+                <!-- Avg Duration -->
                 <td class="font-monospace text-center"
                     th:with="stats=${statsMap[ad.id]}"
                     th:text="${
@@ -347,12 +372,14 @@
                     0s
                 </td>
 
+                <!-- Status -->
                 <td>
                     <span class="badge rounded-pill bg-primary-subtle text-primary fw-bold p-2">
                         <i class="bi bi-clock-fill me-1"></i> Scheduled
                     </span>
                 </td>
 
+                <!-- Actions -->
                 <td class="text-end action-group">
                     <a th:href="@{|/ads-reports/${ad.id}/stats|}"
                        class="btn btn-sm btn-outline-primary">
@@ -360,17 +387,20 @@
                     </a>
                 </td>
 
+                <!-- ID -->
                 <td th:text="${ad.id}" class="text-end ad-id"></td>
             </tr>
             </tbody>
         </table>
     </div>
-    <div class="alert alert-info border-0" role="alert" th:if="${scheduledAds == null or scheduledAds.isEmpty()}">
+    <div class="alert alert-info border-0" role="alert"
+         th:if="${scheduledAds == null or scheduledAds.isEmpty()}">
         <i class="bi bi-info-circle me-2"></i> No ads are currently scheduled.
     </div>
 
     <hr/>
 
+    <!-- ================= EXPIRED ADS ================= -->
     <h3 class="section-title text-danger">
         <i class="bi bi-x-circle-fill me-2"></i> Expired Ads
     </h3>
@@ -380,17 +410,19 @@
             <thead>
             <tr>
                 <th style="width: 10%">Preview</th>
-                <th style="width: 30%">Name</th>
+                <th style="width: 20%">Name</th>
+                <th style="width: 15%">Company</th>
                 <th style="width: 10%">Type</th>
                 <th style="width: 10%">Avg. Duration</th>
                 <th style="width: 10%">Status</th>
-                <th class="text-end" style="width: 20%">Actions</th>
+                <th class="text-end" style="width: 15%">Actions</th>
                 <th style="width: 10%">#ID</th>
             </tr>
             </thead>
             <tbody>
             <tr th:each="ad : ${expiredAds}"
                 th:attr="data-ad-id=${ad.id},data-ad-name=${ad.name}">
+                <!-- Preview -->
                 <td class="text-center">
                     <div class="thumb-area">
                         <th:block th:if="${ad.url != null and !#strings.isEmpty(ad.url)}">
@@ -419,8 +451,14 @@
                     </div>
                 </td>
 
+                <!-- Name -->
                 <td th:text="${ad.name}" class="fw-bold text-truncate"></td>
 
+                <!-- Company -->
+                <td th:text="${ad.companyname != null and !#strings.isEmpty(ad.companyname) ? ad.companyname : '—'}"
+                    class="text-truncate"></td>
+
+                <!-- Type -->
                 <td>
                     <span th:text="${
                         ad.mimetype != null and #strings.startsWith(ad.mimetype, 'image') ? 'Photo' :
@@ -428,6 +466,7 @@
                     }" class="fw-medium"></span>
                 </td>
 
+                <!-- Avg Duration -->
                 <td class="font-monospace text-center"
                     th:with="stats=${statsMap[ad.id]}"
                     th:text="${
@@ -438,12 +477,14 @@
                     0s
                 </td>
 
+                <!-- Status -->
                 <td>
                     <span class="badge rounded-pill bg-danger-subtle text-danger fw-bold p-2">
                         <i class="bi bi-x-circle-fill me-1"></i> Expired
                     </span>
                 </td>
 
+                <!-- Actions -->
                 <td class="text-end action-group">
                     <a th:href="@{|/ads-reports/${ad.id}/stats|}"
                        class="btn btn-sm btn-outline-primary">
@@ -451,17 +492,20 @@
                     </a>
                 </td>
 
+                <!-- ID -->
                 <td th:text="${ad.id}" class="text-end ad-id"></td>
             </tr>
             </tbody>
         </table>
     </div>
-    <div class="alert alert-info border-0" role="alert" th:if="${expiredAds == null or expiredAds.isEmpty()}">
+    <div class="alert alert-info border-0" role="alert"
+         th:if="${expiredAds == null or expiredAds.isEmpty()}">
         <i class="bi bi-info-circle me-2"></i> No ads are expired.
     </div>
 
     <hr/>
 
+    <!-- ================= INACTIVE ADS ================= -->
     <h3 class="section-title text-secondary">
         <i class="bi bi-slash-circle me-2"></i> Inactive Ads
     </h3>
@@ -471,17 +515,19 @@
             <thead>
             <tr>
                 <th style="width: 10%">Preview</th>
-                <th style="width: 30%">Name</th>
+                <th style="width: 20%">Name</th>
+                <th style="width: 15%">Company</th>
                 <th style="width: 10%">Type</th>
                 <th style="width: 10%">Avg. Duration</th>
                 <th style="width: 10%">Status</th>
-                <th class="text-end" style="width: 20%">Actions</th>
+                <th class="text-end" style="width: 15%">Actions</th>
                 <th style="width: 10%">#ID</th>
             </tr>
             </thead>
             <tbody>
             <tr th:each="ad : ${inactiveAds}"
                 th:attr="data-ad-id=${ad.id},data-ad-name=${ad.name}">
+                <!-- Preview -->
                 <td class="text-center">
                     <div class="thumb-area">
                         <th:block th:if="${ad.url != null and !#strings.isEmpty(ad.url)}">
@@ -510,8 +556,14 @@
                     </div>
                 </td>
 
+                <!-- Name -->
                 <td th:text="${ad.name}" class="fw-bold text-truncate"></td>
 
+                <!-- Company -->
+                <td th:text="${ad.companyname != null and !#strings.isEmpty(ad.companyname) ? ad.companyname : '—'}"
+                    class="text-truncate"></td>
+
+                <!-- Type -->
                 <td>
                     <span th:text="${
                         ad.mimetype != null and #strings.startsWith(ad.mimetype, 'image') ? 'Photo' :
@@ -519,6 +571,7 @@
                     }" class="fw-medium"></span>
                 </td>
 
+                <!-- Avg Duration -->
                 <td class="font-monospace text-center"
                     th:with="stats=${statsMap[ad.id]}"
                     th:text="${
@@ -529,12 +582,14 @@
                     0s
                 </td>
 
+                <!-- Status -->
                 <td>
                     <span class="badge rounded-pill bg-secondary-subtle text-secondary fw-bold p-2">
                         <i class="bi bi-slash-circle me-1"></i> Inactive
                     </span>
                 </td>
 
+                <!-- Actions -->
                 <td class="text-end action-group">
                     <a th:href="@{|/ads-reports/${ad.id}/stats|}"
                        class="btn btn-sm btn-outline-primary">
@@ -542,16 +597,19 @@
                     </a>
                 </td>
 
+                <!-- ID -->
                 <td th:text="${ad.id}" class="text-end ad-id"></td>
             </tr>
             </tbody>
         </table>
     </div>
-    <div class="alert alert-info border-0" role="alert" th:if="${inactiveAds == null or inactiveAds.isEmpty()}">
+    <div class="alert alert-info border-0" role="alert"
+         th:if="${inactiveAds == null or inactiveAds.isEmpty()}">
         <i class="bi bi-info-circle me-2"></i> No ads are inactive.
     </div>
 </div>
 
+<!-- PREVIEW MODAL -->
 <div class="modal fade" id="previewModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-xl">
         <div class="modal-content bg-dark shadow-lg">
@@ -568,13 +626,14 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    // Preview functions (Unchanged)
+    // Image preview
     function openPreviewImage(url) {
         const container = document.getElementById("previewContainer");
         container.innerHTML = `<img src="${url}" style="max-width:100%; max-height:90vh;" class="rounded">`;
         new bootstrap.Modal(document.getElementById('previewModal')).show();
     }
 
+    // Video preview
     function openPreviewVideo(url) {
         const container = document.getElementById("previewContainer");
         container.innerHTML = `
@@ -597,7 +656,7 @@
         modal.show();
     }
 
-    // Search filter logic (Unchanged)
+    // Search filter logic
     function applySearchFilter() {
         const idInput = document.getElementById("searchId");
         const nameInput = document.getElementById("searchName");
@@ -625,7 +684,7 @@
         });
     }
 
-    // Initialization (Unchanged)
+    // Init
     document.addEventListener("DOMContentLoaded", function () {
         // Image thumbnails
         document.querySelectorAll(".js-preview-image").forEach(function (img) {
@@ -647,7 +706,7 @@
             });
         });
 
-        // Search logic
+        // Search inputs
         const searchId = document.getElementById("searchId");
         const searchName = document.getElementById("searchName");
         const clearBtn = document.getElementById("clearSearch");
